@@ -15,6 +15,9 @@ FetchContent_Declare(Catch2
 FetchContent_MakeAvailable(magic_enum)
 FetchContent_MakeAvailable(Catch2)
 
+# Allows headers to be included in the build without needing to specify the full path.
+include_directories(.)
+
 add_subdirectory(cero)
 add_subdirectory(cero-ast)
 add_subdirectory(cero-lexer)

@@ -1,6 +1,6 @@
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cc *.hh)
 
-add_executable(cero-ast
+add_library(cero-ast STATIC
   ${sources}
 )
 
