@@ -1,6 +1,11 @@
 # Visual Studio cache/options directory
 .vs/
 
+# Vim swap files & tmp files 
+*.swp
+*.swo
+*~
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
