@@ -14,16 +14,16 @@ auto Lexer::next() -> Token
   auto character = ' ';
   auto string = " "s; // moved into the Token constructor.
 
-  while (isspace(character))
+  while (isspace(character) != 0)
     character = read();
 
   // [a-zA-Z][a-zA-Z0-9]*
-  if (isalpha(character)) {
+  if (isalpha(character) != 0) {
     string = character;
-    while (isalnum(character = read()))
+    while (isalnum(character = read()) != 0)
       string += character;
-    if (Token::Keywords.contains(string))
-      return {Token::Keywords.at(string), string};
+    if (Token::keywords.contains(string))
+      return {Token::keywords.at(string), string};
     return Token{Token::Kind::Identifier, string};
   }
 

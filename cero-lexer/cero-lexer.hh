@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <string>
 #include <unordered_map>
 
 namespace Cero {
@@ -15,8 +16,7 @@ struct Token {
     Unexpected,
   };
 
-  // ReSharper disable once CppInconsistentNaming
-  inline static std::unordered_map<std::string, Kind> Keywords{{"auto", Kind::Auto}};
+  inline static std::unordered_map<std::string, Kind> keywords{{"auto", Kind::Auto}};
 
   Token(const Kind kind) noexcept : m_kind{kind} {}
   Token(const Kind kind, std::string string) noexcept : m_kind{kind}, m_string{std::move(string)} {}
@@ -34,7 +34,7 @@ private:
 
 class Lexer {
 public:
-  Lexer(const std::string_view string_view) : m_string_view{string_view}, m_position{0} {}
+  Lexer(const std::string_view string_view = "") : m_string_view{string_view} {}
 
   [[nodiscard]] auto next() -> Token;
   [[nodiscard]] auto read() -> char;
@@ -42,7 +42,7 @@ public:
 
 private:
   std::string_view m_string_view;
-  std::size_t m_position;
+  std::size_t m_position{};
 };
 
 } // namespace Cero
