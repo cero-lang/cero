@@ -1,5 +1,6 @@
-# Visual Studio cache/options directory
+# Cache/options directory
 .vs/
+.cache/
 
 # Vim swap files & tmp files 
 *.swp
@@ -23,3 +24,5 @@ bld/
 [Ll]ogs/
 [Bb]uild/
 [Oo]out/
+
+
