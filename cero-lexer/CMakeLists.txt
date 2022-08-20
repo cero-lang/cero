@@ -14,3 +14,8 @@ PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W3 /WX>
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
 )
+
+target_link_libraries(cero-lexer
+PRIVATE
+  magic_enum
+)
