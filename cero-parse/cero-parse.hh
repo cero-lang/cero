@@ -2,6 +2,16 @@
 
 #pragma once
 
+#include <cero-ast/cero-ast.hh>
+
+#include <memory>
+
 namespace Cero {
+
+class Parser : public Lexer {
+public:
+  Parser();
+  std::unique_ptr<FunctionDeclaration> ParseFunctionDeclaration(const Token &token);
+};
 
 } // namespace Cero
