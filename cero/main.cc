@@ -5,26 +5,33 @@
 #include <fstream>
 #include <vector>
 
-using std::string_view;
+using std::getline;
+using std::ifstream;
+using std::ios;
+using std::runtime_error;
 using std::span;
+using std::string;
+using std::string_view;
+using std::vector;
+using std::ios_base;
 
 auto main([[maybe_unused]] const int argc, [[maybe_unused]] char *argv[]) -> int
 {
-  for (std::string_view argument : std::span(argv, argc)) {
+  for (string_view argument : span(argv, argc)) {
     if (argument == "v" || argument == "version") { }
     if (argument == "h" || argument == "help") { }
 
-    std::ifstream read;
-    read.exceptions(read.exceptions() | std::ios::failbit);
+    ifstream read;
+    read.exceptions(read.exceptions() | ios::failbit);
     try {
       read.open(argument.data());
-    } catch (std::ios_base::failure &e) {
-      std::runtime_error error(e.what());
+    } catch (ios_base::failure &e) {
+      throw runtime_error(e.what());
     }
 
-    std::vector<std::string> source;
-    std::string line;
-    while (std::getline(read, line)) {
+    vector<string> source;
+    string line;
+    while (getline(read, line)) {
       source.push_back(line);
     }
 

@@ -30,4 +30,3 @@ PUBLIC
 PRIVATE
   magic_enum
 )
-
