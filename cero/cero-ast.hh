@@ -4,7 +4,7 @@
 
 #include "cero-ast-visitor.hh"
 
-#include <cero-lexer/cero-lexer.hh>
+#include "cero-lexer.hh"
 
 namespace Cero {
 

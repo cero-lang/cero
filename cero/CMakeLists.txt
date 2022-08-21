@@ -4,12 +4,6 @@ add_executable(cero
   ${sources}
 )
 
-add_dependencies(cero
-  cero-ast
-  cero-lexer
-  cero-parse
-)
-
 target_compile_features(cero
 PRIVATE
   cxx_std_20
@@ -22,11 +16,6 @@ PRIVATE
 )
 
 target_link_libraries(cero
-PUBLIC
-  cero-ast
-  cero-lexer
-  cero-parse
-
 PRIVATE
   magic_enum
 )

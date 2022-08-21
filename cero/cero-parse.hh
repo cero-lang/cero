@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <cero-ast/cero-ast.hh>
+#include "cero-ast.hh"
 
 #include <memory>
 
