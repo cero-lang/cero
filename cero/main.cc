@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <span>
+#include <string>
 #include <string_view>
 #include <fstream>
 #include <vector>
