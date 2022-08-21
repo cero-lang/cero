@@ -1,0 +1,10 @@
+# this is a config file for Poxy - a Doxygen + m.css front-end written in Python.
+# https://github.com/marzer/poxy
+
+name            = 'cero'
+github          = 'cero-lang/cero'
+cpp             =  20
+
+[sources]
+patterns        = [ '*.cc', '*.hh' ]
+recursive_paths = [ '../' ]
