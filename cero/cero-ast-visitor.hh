@@ -8,7 +8,7 @@ class FunctionDeclaration;
 
 class ASTVisitor {
 public:
-  virtual void VisitFunctionDeclaration(const FunctionDeclaration *node) = 0;
+  virtual void VisitFunctionDeclaration(const FunctionDeclaration *ast) = 0;
 };
 
 } // namespace Cero

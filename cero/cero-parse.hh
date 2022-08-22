@@ -8,10 +8,20 @@
 
 namespace Cero {
 
-class Parser : public Lexer {
+class Parser {
 public:
-  Parser();
-  std::unique_ptr<FunctionDeclaration> ParseFunctionDeclaration(const Token &token);
+  Parser(std::vector<std::string> &source)
+      : tokens(source)
+  {
+  }
+
+  // clang-format off
+  auto parse() -> std::unique_ptr<AST>;
+  auto parseFunctionDeclaration(const Token &name) -> std::unique_ptr<FunctionDeclaration>;
+  // clang-format on
+
+private:
+  Lexer tokens;
 };
 
 } // namespace Cero

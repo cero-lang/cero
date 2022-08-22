@@ -2,52 +2,93 @@
 
 #include "cero-lexer.hh"
 
+#include <gsl/assert>
+
 #include <cctype>
 #include <string>
 
-using namespace std::string_literals; // enables s-suffix for std::string literals
-
 namespace Cero {
 
-auto Lexer::next() -> Token
+// This is a simple lexer that tokenizes Cero source code.
+auto Lexer::lex(bool cache) -> Token
 {
-  auto character = ' ';
-  auto string = " "s; // moved into the Token constructor.
+  // Check if we have a cached token. If so, consume it and return it.
+  if (!cache && !m_cache.empty()) {
+    auto token = m_cache.front();
+    return m_cache.erase(m_cache.begin()), token;
+  }
 
-  while (isspace(character) != 0)
-    character = read();
+  auto character = read();
+  while (isspace(character = read()) != 0)
+    next();
+
+  if (character == EOF)
+    return { Token::Kind::End };
 
   // [a-zA-Z][a-zA-Z0-9]*
-  if (isalpha(character) != 0) {
-    string = character;
-    while (isalnum(character = read()) != 0)
-      string += character;
-    if (Token::keywords.contains(string))
-      return {Token::keywords.at(string), string};
-    return Token{Token::Kind::Identifier, string};
+  if (isalpha(character) || character == '_') {
+    std::string identifier;
+    while (isalnum(character = read()) || character == '_')
+      next(), identifier.push_back(character);
+    if (Token::Keywords.contains(identifier))
+      return { Token::Keywords.at(identifier), identifier };
+    return { Token::Kind::Identifier, identifier };
   }
 
-  //[0-9.]+
-  if (isdigit(character) || character == '.') {
-    do {
-      string += std::to_string(character);
-      character = read();
-    }
-    while (isdigit(character) || character == '.');
-    return {Token::Kind::Number, strtod(string.c_str(), nullptr)};
-  }
-
-  // EOF doesn't exist if source is a string literal
-  if (character == EOF)
-    return {Token::Kind::End};
-  return {Token::Kind::Unexpected};
+  return { Token::Kind::Unexpected };
 }
 
-auto Lexer::read() -> char
+//! Returns the character at the current position if there is one, otherwise the
+//! stream is advanced until a non-empty line is found. If the stream is at the
+//! end of the file, the EOF token is returned.
+auto Lexer::read() -> int
 {
-  if (m_position == m_string_view.length())
-    return '\0';
-  return m_string_view.at(m_position++);
+  if (m_position.line < m_source.size()
+      && m_source[m_position.line].length() == 0) {
+    next();
+  }
+
+  if (m_position.line >= m_source.size()
+      || (m_position.line == m_source.size() - 1
+          && m_position.character == m_source.at(m_position.line).length())) {
+    return EOF;
+  }
+
+  return m_source[0][m_position.character];
 }
 
-} // namespace cero
+//! Advances the stream to the next character. If there is none, the stream is
+//! advanced to the next line and the character position is reset to the
+//! beginning of the line.
+auto Lexer::next() -> void
+{
+  if (m_position.character < m_source.at(m_position.line).length()) {
+    ++m_position.character;
+  } else {
+    ++m_position.line;
+    m_position.character = 0;
+  }
+}
+
+//! Push the next token(s) onto the cache. This can also be used for lookahead.
+auto Lexer::push(unsigned int offset) -> void
+{
+  // TODO: Rework this with a proper cache mechanism.
+  for (size_t i = m_cache.size(); i < offset; i++)
+    m_cache.push_back(lex(true));
+}
+
+//! pop is a bit of a misnomer, it does not consume, but rather returns the top
+//! token on the cache. This is useful for when we want to peek at the next
+//! token without consuming it.
+auto Lexer::pop() -> Token
+{
+  // HACK: This ensures that we don't have to deal with the fact that the cache
+  // is empty. We need a proper caching mechanism, but for now this is fine.
+  if (m_cache.empty())
+    push();
+
+  return m_cache.back();
+}
+
+} // namespace Cero

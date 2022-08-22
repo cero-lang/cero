@@ -1,8 +1,10 @@
 # Cache/options directory
 .vs/
 .cache/
+.vscode/
+.idea/
 
-# Vim swap files & tmp files 
+# Vim swap files & tmp files
 *.swp
 *.swo
 *~
@@ -24,5 +26,6 @@ bld/
 [Ll]ogs/
 [Bb]uild/
 [Oo]out/
+[Cc]make-build-*/
 
 
