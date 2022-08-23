@@ -4,11 +4,12 @@
 
 namespace Cero {
 
-class FunctionDeclaration;
+class FunctionDefinition;
 
-class ASTVisitor {
+class AstVisitor {
 public:
-  virtual void VisitFunctionDeclaration(const FunctionDeclaration *ast) = 0;
+  virtual ~AstVisitor() = default;
+  virtual auto visit_function_definition(const FunctionDefinition *ast) -> void = 0;
 };
 
 } // namespace Cero

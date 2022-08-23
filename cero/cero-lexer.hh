@@ -16,6 +16,7 @@ struct Token {
     Identifier,
     Auto,
     LeftParen,
+    RightParen
   };
 
   // clang-format off
@@ -53,15 +54,10 @@ public:
     push();
   }
 
-  //! Lexes the next token.
   auto lex(bool cache = false) -> Token;
-  //! Helper function to read the next character from the source.
-  auto read() -> int;
-  //! Helper function to forward the next character from the source.
+  auto read() -> char;
   auto next() -> void;
-  //! Helper function to cache a token.
   auto push(unsigned int offset = 1) -> void;
-  //! Helper function to pop a token from the cache.
   auto pop() -> Token;
 
   // TODO:

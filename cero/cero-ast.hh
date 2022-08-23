@@ -6,24 +6,37 @@
 
 #include "cero-lexer.hh"
 
+#include <llvm/IR/Value.h>
+
 namespace Cero {
 
-class AST {
+class Ast {
 public:
-  virtual ~AST() = default;
-  virtual void Accept(ASTVisitor*) const {}
+  virtual ~Ast() = default;
+  virtual auto accept(AstVisitor *) const -> void { }
+
+  virtual auto codegen() -> llvm::Function*
+  {
+    return nullptr;
+  }
 };
 
-class FunctionDeclaration : public AST {
+class FunctionDefinition : public Ast {
 public:
-  FunctionDeclaration(Token token) : token(token) {}
-
-  void Accept(ASTVisitor *visitor) const override {
-    visitor->VisitFunctionDeclaration(this);
+  FunctionDefinition(Token token)
+      : m_token(std::move(token))
+  {
   }
 
+  auto accept(AstVisitor *visitor) const -> void override
+  {
+    visitor->visit_function_definition(this);
+  }
+
+  auto codegen() -> llvm::Function * override;
+
 private:
-  Token token;
+  Token m_token;
 };
 
 } // namespace Cero

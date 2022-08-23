@@ -11,17 +11,19 @@ namespace Cero {
 class Parser {
 public:
   Parser(std::vector<std::string> &source)
-      : tokens(source)
+      : m_tokens(source)
   {
   }
 
   // clang-format off
-  auto parse() -> std::unique_ptr<AST>;
-  auto parseFunctionDeclaration(const Token &name) -> std::unique_ptr<FunctionDeclaration>;
+
+  auto parse() -> void;
+  [[nodiscard]] auto parse_function_definition(const Token &token) const -> std::unique_ptr<FunctionDefinition>;
+
   // clang-format on
 
 private:
-  Lexer tokens;
+  Lexer m_tokens;
 };
 
 } // namespace Cero

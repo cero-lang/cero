@@ -5,23 +5,32 @@
 
 namespace Cero {
 
-auto Parser::parse() -> std::unique_ptr<AST>
+auto Parser::parse() -> void
 {
-  std::unique_ptr<AST> ast = std::make_unique<AST>();
+  auto ast = std::make_unique<Ast>();
+  auto token { Token { Token::Kind::Unexpected } };
 
-  if (tokens.lex().kind() == Token::Kind::Auto) {
-    if (tokens.lex().kind() == Token::Kind::Identifier) {
-      auto name = tokens.pop().string();
-      // ParseFunctionDeclaration ...
+  while ((token = m_tokens.lex()).kind() != Token::Kind::End) {
+    switch (token.kind()) {
+    case Token::Kind::Auto: {
+      if ((token = m_tokens.lex()).kind() == Token::Kind::Identifier) {
+        const auto previous = token;
+        if ((token = m_tokens.lex()).kind() == Token::Kind::LeftParen) {
+          ast = parse_function_definition(previous);
+          ast->codegen();
+        }
+      }
     }
+    [[fallthrough]] default:
+      break;
+    }
+    break;
   }
-
-  return ast;
 }
 
-auto Parser::parseFunctionDeclaration(const Token &name) -> std::unique_ptr<FunctionDeclaration>
+auto Parser::parse_function_definition(const Token &token) const -> std::unique_ptr<FunctionDefinition>
 {
-  return std::make_unique<FunctionDeclaration>(name);
+  return std::make_unique<FunctionDefinition>(token);
 }
 
 } // namespace Cero

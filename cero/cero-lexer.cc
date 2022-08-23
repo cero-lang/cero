@@ -2,19 +2,17 @@
 
 #include "cero-lexer.hh"
 
-#include <gsl/assert>
-
 #include <cctype>
 #include <string>
 
 namespace Cero {
 
 // This is a simple lexer that tokenizes Cero source code.
-auto Lexer::lex(bool cache) -> Token
+auto Lexer::lex(const bool cache) -> Token
 {
   // Check if we have a cached token. If so, consume it and return it.
   if (!cache && !m_cache.empty()) {
-    auto token = m_cache.front();
+    auto &token = m_cache.front();
     return m_cache.erase(m_cache.begin()), token;
   }
 
@@ -35,13 +33,18 @@ auto Lexer::lex(bool cache) -> Token
     return { Token::Kind::Identifier, identifier };
   }
 
+  if (character == '(')
+    return { Token::Kind::LeftParen };
+  if (character == ')')
+    return { Token::Kind::RightParen };
+
   return { Token::Kind::Unexpected };
 }
 
 //! Returns the character at the current position if there is one, otherwise the
 //! stream is advanced until a non-empty line is found. If the stream is at the
 //! end of the file, the EOF token is returned.
-auto Lexer::read() -> int
+auto Lexer::read() -> char
 {
   if (m_position.line < m_source.size()
       && m_source[m_position.line].length() == 0) {
@@ -49,8 +52,8 @@ auto Lexer::read() -> int
   }
 
   if (m_position.line >= m_source.size()
-      || (m_position.line == m_source.size() - 1
-          && m_position.character == m_source.at(m_position.line).length())) {
+      || m_position.line == m_source.size() - 1
+          && m_position.character == m_source.at(m_position.line).length()) {
     return EOF;
   }
 
@@ -62,19 +65,20 @@ auto Lexer::read() -> int
 //! beginning of the line.
 auto Lexer::next() -> void
 {
-  if (m_position.character < m_source.at(m_position.line).length()) {
+  if (m_position.character < m_source.at(m_position.line).length())
     ++m_position.character;
-  } else {
+
+  else {
     ++m_position.line;
     m_position.character = 0;
   }
 }
 
 //! Push the next token(s) onto the cache. This can also be used for lookahead.
-auto Lexer::push(unsigned int offset) -> void
+auto Lexer::push(const unsigned int offset) -> void
 {
   // TODO: Rework this with a proper cache mechanism.
-  for (size_t i = m_cache.size(); i < offset; i++)
+  for (auto i = m_cache.size(); i < offset; i++)
     m_cache.push_back(lex(true));
 }
 
