@@ -20,8 +20,8 @@ auto main([[maybe_unused]] const int argc, [[maybe_unused]] char *argv[]) -> int
   Cero::context = std::make_unique<llvm::LLVMContext>();
   Cero::module  = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
   Cero::builder = std::make_unique<llvm::IRBuilder<>>(*Cero::context);
+
   concrete_syntax_tree.create()->codegen();
   Cero::module->print(llvm::errs(), nullptr);
-
   return 0;
 }

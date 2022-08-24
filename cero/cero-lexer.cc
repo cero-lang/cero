@@ -14,12 +14,14 @@ Lexer::Lexer(std::vector<std::string> &source)
   while (true) {
     std::optional<Token> token = std::nullopt;
 
-    if (not token)
+    if (!token)
       token = lex_alphabet();
+
+    if (!token) // When all else fails. This is the default case.
+      break;
+
     if (token)
       m_tokens.emplace_back(token.value());
-    if (not token) // eof
-      break;
   }
 }
 

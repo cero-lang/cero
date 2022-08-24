@@ -5,13 +5,14 @@
 #include "cero-codegen-llvm.hh"
 
 #include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Verifier.h>
 
 namespace Cero {
 
+// Emit the code for the abstract syntax tree. This will generate the LLVM IR
+// for the program.
 auto AbstractSyntaxTree::codegen() -> llvm::Value *
 {
-  // Emit the code for the abstract syntax tree. This will generate the LLVM IR
-  // for the program.
   for (auto &node : get_nodes())
     node->codegen();
   return nullptr;
@@ -34,7 +35,14 @@ auto FunctionDefinition::codegen() -> llvm::Value*
 
   // The type, linkage, name to use and which module to insert the function
   // into.
-  return llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage, m_name, module.get());
+  const auto fn = llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage, "main", module.get());
+  const auto fn_body = llvm::BasicBlock::Create(module->getContext(), "entry", fn);
+
+  builder->SetInsertPoint(fn_body);
+  builder->CreateRet(nullptr); // Passing nullptr to CreateRet should give us ret void.
+
+  verifyFunction(*fn);
+  return fn;
 }
 
 } // namespace Cero
