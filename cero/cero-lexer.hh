@@ -19,13 +19,9 @@ struct Token {
     RightParen
   };
 
-  // clang-format off
-
   inline static std::unordered_map<std::string, Kind> Keywords {
     { "auto", Kind::Auto }
   };
-
-  // clang-format on
 
   Token(const Kind kind) noexcept
       : m_kind { kind }
@@ -42,29 +38,22 @@ struct Token {
   [[nodiscard]] auto string() const -> std::string { return m_string; }
 
 private:
-  Kind m_kind { Kind::End };
+  Kind m_kind;
   std::string m_string {};
 };
 
 class Lexer {
 public:
-  Lexer(std::vector<std::string> &source)
-      : m_source { std::move(source) }
+  Lexer(std::vector<std::string> &source);
+
+  auto get_tokens() -> std::vector<Token>
   {
-    push();
+    return std::move(m_tokens);
   }
 
-  auto lex(bool cache = false) -> Token;
-  auto read() -> char;
-  auto next() -> void;
-  auto push(unsigned int offset = 1) -> void;
-  auto pop() -> Token;
-
-  // TODO:
-  // We should probably create more helper functions for the other lexer instead
-  // of adding them all in one place ( Lexer::lex() ).
-  //   auto lex_keyword() -> std::optional<Token>;
-  //   auto lex_identifier() -> std::optional<Token>;
+protected:
+  template <typename T>  auto next() -> T;
+  auto lex_alphabet() -> std::optional<Token>;
 
 private:
   struct {
@@ -73,7 +62,7 @@ private:
   } m_position;
 
   std::vector<std::string> m_source;
-  std::vector<Token> m_cache;
+  std::vector<Token> m_tokens;
 };
 
 } // namespace Cero
