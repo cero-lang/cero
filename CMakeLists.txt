@@ -91,4 +91,4 @@ endif()
 
 find_package(Clang REQUIRED)
 
-add_subdirectory(cero)
+add_subdirectory(src/cplusplus)
