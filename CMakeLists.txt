@@ -45,4 +45,4 @@ if(MSVC)
   endif()
 endif()
 
-add_subdirectory(src/cplusplus)
+add_subdirectory(src/cero-bootstrap)
