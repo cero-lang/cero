@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <map>
+
 #include <llvm/ADT/APFloat.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>

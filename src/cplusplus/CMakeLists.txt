@@ -17,7 +17,5 @@ PRIVATE
 
 target_link_libraries(cero
 PRIVATE
-  magic_enum
-  GSL
   LLVM
 )
