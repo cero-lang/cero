@@ -4,28 +4,15 @@ BasedOnStyle: WebKit
 IndentWidth: 2
 PointerAlignment: Right
 AccessModifierOffset: -2
-IncludeIsMainRegex: '(_test)?$'
-SortIncludes: true
-IncludeBlocks: Regroup
-IncludeCategories:
-  # GSL Headers
-  - Regex:           '<gsl([A-Za-z0-9.\Q/-_\E])+>'
-    Priority:        2
-  # Headers in <>
-  - Regex:           '<([A-Za-z0-9.\Q/-_\E])+>'
-    Priority:        4
-  # Headers in ""
-  - Regex:           '"([A-Za-z0-9.\Q/-_\E])+"'
-    Priority:        0
 
-# Our column limit is more around 80 characters but we want to avoid
+# Our column limit is more around 100 characters but we want to avoid
 # this rule to be over-agressive. So for clang-format, let's use a
 # higher limit. Then let's put some biggish penalties on breaking on
 # assignment, or parentheses, or other similar cases. Actually with such
 # limits, if clang-format really ends up re-formatting, there might be
 # something better to do code-wise (i.e. we might be in an akwardly
 # over-nested block case).
-ColumnLimit: 80
+ColumnLimit: 100
 PenaltyBreakAssignment: 60
 PenaltyBreakBeforeFirstCallParameter: 100
 PenaltyBreakString: 60

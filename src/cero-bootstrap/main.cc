@@ -3,25 +3,41 @@
 #include "cero-codegen-llvm.hh"
 #include "cero-concrete-syntax-tree.hh"
 
+#include <format>
+#include <llvm/Support/InitLLVM.h>
+
 #include <fstream>
 #include <string>
 #include <vector>
 
-auto main([[maybe_unused]] const int argc, [[maybe_unused]] char *argv[]) -> int
+auto main(int argc, char *argv[]) -> int
 {
-  std::ifstream read("main.cero");
-  std::vector<std::string> source;
-  std::string line;
+  llvm::setBugReportMsg("Cero crashed. Please report the bug to"
+                        " https://github.com/cero-lang/cero/issues "
+                        "with the stack trace.\n");
 
-  while (std::getline(read, line))
-    source.push_back(line);
+  llvm::InitLLVM init_llvm(argc, argv);
+  llvm::errs().tie(&llvm::outs());
+  llvm::cl::opt<std::vector<std::string>> sources(llvm::cl::Positional, llvm::cl::desc("source files"), llvm::cl::Required);
+  llvm::cl::ParseCommandLineOptions(argc, argv);
 
-  Cero::ConcreteSyntaxTree concrete_syntax_tree(source);
   Cero::context = std::make_unique<llvm::LLVMContext>();
   Cero::module  = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
   Cero::builder = std::make_unique<llvm::IRBuilder<>>(*Cero::context);
 
-  concrete_syntax_tree.create()->codegen();
+  for (auto &source : sources) {
+    if (std::ifstream istrm(source); istrm.is_open()) {
+      std::vector<std::string> source;
+      std::string line;
+      while (std::getline(istrm, line))
+        source.push_back(line);
+      Cero::ConcreteSyntaxTree concrete_syntax_tree(source);
+      concrete_syntax_tree.create()->codegen();
+    } else {
+      throw std::runtime_error(std::format("failed to read {}", source));
+    }
+  }
+
   Cero::module->print(llvm::errs(), nullptr);
   return 0;
 }
