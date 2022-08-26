@@ -48,7 +48,7 @@ auto main(int argc, char *argv[]) -> int
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
   Cero::context = std::make_unique<llvm::LLVMContext>();
-  Cero::module  = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
+  Cero::module = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
   Cero::builder = std::make_unique<llvm::IRBuilder<>>(*Cero::context);
 
   // std::ifstream actually copies the data when input.read() is called. This is
@@ -85,8 +85,11 @@ auto main(int argc, char *argv[]) -> int
       return 1;
     }
 
-    // Windows EOL sequence ends with '\r\n' and Linux ends with '\n'.
-    // TODO: Handle string literals and comments they contain '\r\n' or '\n'.
+    // FIXME: Look for string-literals and comments and ensure that the EOL
+    // sequence is not enclosed in them. This is not perfect, but it should work
+    // for the majority of cases.
+    // https://en.cppreference.com/w/cpp/string/basic_string_view/find_first_of
+
     auto line_end = strchr(file_view, '\n');
     auto line_length = line_end - file_view;
     auto line = std::string_view(file_view, line_length);
@@ -109,10 +112,11 @@ auto main(int argc, char *argv[]) -> int
         tokens.push_back(queue.front().get()), queue.pop();
       queue.emplace(std::async(std::launch::async, Cero::tokenize, line));
 
-      // Cute trick: We can advance the pointer to the next line by adding two
-      // bytes to the pointer. This is because the line ends with '\r\n'.
-      file_view = line_end + 0x02;
-      line_end = strchr(file_view, '\r');
+      // Cute trick: We can advance the pointer to the next line by adding one
+      // byte to the pointer. This is because the line ends with either '\r\n'
+      // or '\n'.
+      file_view = line_end + 0x01;
+      line_end = strchr(file_view, '\n');
       line_length = line_end - file_view;
       line = std::string_view(file_view, line_length);
     }
