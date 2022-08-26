@@ -19,7 +19,7 @@ public:
   virtual auto codegen() -> void;
 
   auto add_node(std::unique_ptr<AbstractSyntaxTree> s) -> void;
-  auto get_nodes() const -> const std::vector<std::unique_ptr<AbstractSyntaxTree>> &;
+  [[nodiscard]] auto get_nodes() const -> const std::vector<std::unique_ptr<AbstractSyntaxTree>> &;
 
 private:
   std::vector<std::unique_ptr<AbstractSyntaxTree>> m_child;
@@ -32,11 +32,7 @@ public:
   {
   }
 
-  auto visit(AbstractSyntaxTreeVisitor *visitor) const -> void override
-  {
-    visitor->visit(this);
-  }
-
+  auto visit(AbstractSyntaxTreeVisitor *visitor) const -> void override { visitor->visit(this); }
   auto codegen() -> void override;
 
 private:

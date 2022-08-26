@@ -25,7 +25,7 @@ namespace Cero {
 // a separate thread. This is necessary because the lexer is not thread-safe.
 // TODO: Move this in cero-lexer.hh
 
-auto tokenize(const std::string_view s) -> std::vector<Token>
+auto tokenize(const std::string_view &s) -> std::vector<Token>
 {
   Lexer lexer;
   return lexer.lex(s);
@@ -142,10 +142,6 @@ auto main(int argc, char *argv[]) -> int
 
     // Parse the tokens. This is the main part of the compiler.
     Cero::ConcreteSyntaxTree concrete_syntax_tree(all_tokens);
-    auto abstract_syntax_tree = concrete_syntax_tree.create();
-    auto semantic = std::make_unique<Cero::Semantic>();
-    abstract_syntax_tree->visit(semantic.get());
-    abstract_syntax_tree->codegen();
 
 #endif
 
