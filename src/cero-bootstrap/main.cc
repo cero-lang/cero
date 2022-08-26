@@ -2,18 +2,21 @@
 
 #include "cero-codegen-llvm.hh"
 #include "cero-concrete-syntax-tree.hh"
+#include "cero-semantic.hh"
 
 #include <format>
 #include <llvm/Support/InitLLVM.h>
 
 #include <future>
+#include <iostream>
 #include <queue>
 #include <string>
 #include <vector>
 
 #ifdef WIN32
-#include <Windows.h>
-#pragma warning(disable : 6387)
+  #include <Windows.h>
+  #pragma warning(disable : 6387)
+  #pragma warning(disable : 6001) // Using uninitialized memory. Trigger False positives.
 #endif
 
 namespace Cero {
@@ -38,17 +41,14 @@ auto main(int argc, char *argv[]) -> int
 
   llvm::InitLLVM init_llvm(argc, argv);
   llvm::errs().tie(&llvm::outs());
-  // FIXME: LLVM doesn't accept our input.
-  llvm::cl::opt<std::string> sources(llvm::cl::Positional,
-      llvm::cl::desc("source files"), llvm::cl::Required);
+  // See: https://llvm.org/docs/CommandLine.html
+  llvm::cl::list<std::string> input_filenames("args",
+      llvm::cl::desc("Input filenames"), llvm::cl::Positional,
+      llvm::cl::OneOrMore);
   llvm::cl::ParseCommandLineOptions(argc, argv);
-  // FIXME: This is a hack. See above.
-  std::string source = {
-    "main.cero"
-  };
 
   Cero::context = std::make_unique<llvm::LLVMContext>();
-  Cero::module = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
+  Cero::module  = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
   Cero::builder = std::make_unique<llvm::IRBuilder<>>(*Cero::context);
 
   // std::ifstream actually copies the data when input.read() is called. This is
@@ -56,59 +56,96 @@ auto main(int argc, char *argv[]) -> int
   // MapViewOfFile — mmap on Linux — where the data will only be read from disk
   // when we access the virtual memory that the pointer points to.
 
+  // TODO: Create a application programming interface like
+  // https://github.com/alitrack/mman-win32. This would allow us to use mmap on
+  // Windows and unify the code.
+
+  for (const auto &input : input_filenames) {
+
 #ifdef WIN32
 
-  // This creates a "view" of the file but doesn't read data from the file.
-  auto file = CreateFileA(source.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  auto file_map = CreateFileMapping(file, nullptr, PAGE_READONLY, 0, 0, nullptr);
-  auto file_base = static_cast<char *>(MapViewOfFile(file_map, FILE_MAP_READ, 0, 0, 0));
+    // Remarks: Address space fragmentation puts a limit on the size of the view
+    // we can create since a single view requires a contiguous address range.
 
-  // Windows EOL sequence always ends with '\r\n'.
-  // map the page that is closest to the line offset into memory.
-  auto line_end = strchr(file_base, '\r');
-  auto line_length = line_end - file_base;
-  auto line = std::string_view(file_base, line_length);
+    const auto file = CreateFileA(input.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) {
+      std::cerr << "Could not open file: " << input << std::endl;
+      return 1;
+    }
 
-  // Create a queue of futures to be executed in parallel. this is used to
-  // parallelize the lexing of the source files.
-  const auto number_of_threads = std::thread::hardware_concurrency();
-  std::queue<std::future<std::vector<Cero::Token>>> futures;
-  std::vector<std::vector<Cero::Token>> tokens;
+    const auto file_map = CreateFileMapping(file, nullptr, PAGE_READONLY, 0, 0, nullptr);
+    if (file_map == nullptr || GetLastError() == ERROR_ALREADY_EXISTS) {
+      std::cerr << "Could not create file mapping: " << input << std::endl;
+      return 1;
+    }
 
-  // Tokenize the source file.
-  while (line_end != nullptr) {
-    if (futures.size() >= number_of_threads)
-      tokens.push_back(futures.front().get()), futures.pop();
-    futures.emplace(std::async(std::launch::async, Cero::tokenize, line));
-    // Advance the pointer to the next line.
-    file_base = line_end + 0x02;
-    line_end = strchr(file_base, '\r');
-    line_length = line_end - file_base;
-    line = std::string_view(file_base, line_length);
-  }
+    auto file_view = static_cast<char *>(MapViewOfFile(file_map, FILE_MAP_READ, 0, 0, 0));
+    if (file_view == nullptr) {
+      std::cerr << "Could not map view of file: " << input << std::endl;
+      return 1;
+    }
 
-  // Wait for all the futures to complete. This is necessary because the futures
-  // are executed in parallel.
-  while (!futures.empty())
-    tokens.push_back(futures.front().get()), futures.pop();
+    // Windows EOL sequence ends with '\r\n' and Linux ends with '\n'.
+    // TODO: Handle string literals and comments they contain '\r\n' or '\n'.
+    auto line_end = strchr(file_view, '\n');
+    auto line_length = line_end - file_view;
+    auto line = std::string_view(file_view, line_length);
 
-  // Each line has its own vector of tokens. We need to merge them into a single
-  // vector. NOTE: We need a more efficient way to merge the tokens.
-  std::vector<Cero::Token> all_tokens;
-  for (const auto &x : tokens)
-    all_tokens.insert(all_tokens.end(), x.begin(), x.end());
+    // Create a queue to parallelize the lexing of the source files.
+    // We only map a small portion of the file data at one time.
+    std::vector<std::vector<Cero::Token>> tokens;
+    std::queue<std::future<std::vector<Cero::Token>>> queue;
 
-  // Parse the tokens. This is the main part of the compiler.
-  Cero::ConcreteSyntaxTree concrete_syntax_tree(all_tokens);
-  concrete_syntax_tree.create()->codegen();
+    // Tokenize the source file. Each thread will tokenize a small portion of
+    // the file and put the tokens in a queue. The main thread will dequeue the
+    // tokens and merge them into a single vector. This will allow us to
+    // tokenize the entire file in parallel and ensure that the tokens are in
+    // the same order as the source file.
+    const auto hardware_concurrency = std::thread::hardware_concurrency();
+    while (line_end != nullptr) {
+      // Lock the queue if we've reached the maximum number of threads.
+      // This will prevent the queue from getting too large.
+      if (queue.size() >= hardware_concurrency)
+        tokens.push_back(queue.front().get()), queue.pop();
+      queue.emplace(std::async(std::launch::async, Cero::tokenize, line));
 
-  // Free up the memory that the file was mapped into.
-  if (UnmapViewOfFile(file_base) == 0 || CloseHandle(file_map) == 0) {
-    throw std::runtime_error("Failed to unmap the file. Error: "
-        + std::to_string(GetLastError()));
-  }
+      // Cute trick: We can advance the pointer to the next line by adding two
+      // bytes to the pointer. This is because the line ends with '\r\n'.
+      file_view = line_end + 0x02;
+      line_end = strchr(file_view, '\r');
+      line_length = line_end - file_view;
+      line = std::string_view(file_view, line_length);
+    }
+
+    // Wait for all the threads to finish. We can't use a queue because the
+    // threads are not guaranteed to finish in the same order as they were
+    // started.
+    while (!queue.empty())
+      tokens.push_back(queue.front().get()), queue.pop();
+
+    // Merge the tokens into a single vector.
+    std::vector<Cero::Token> all_tokens;
+    for (const auto &tokens_per_line : tokens) {
+      all_tokens.insert(all_tokens.end(), tokens_per_line.begin(),
+          tokens_per_line.end());
+    }
+
+    // Clean up. We don't need the file anymore.
+    if (UnmapViewOfFile(file_view) == 0 || CloseHandle(file_map) == 0 || CloseHandle(file) == 0) {
+      throw std::runtime_error("Failed to unmap the file. Error: "
+          + std::to_string(GetLastError()));
+    }
+
+    // Parse the tokens. This is the main part of the compiler.
+    Cero::ConcreteSyntaxTree concrete_syntax_tree(all_tokens);
+    auto abstract_syntax_tree = concrete_syntax_tree.create();
+    auto semantic = std::make_unique<Cero::Semantic>();
+    abstract_syntax_tree->visit(semantic.get());
+    abstract_syntax_tree->codegen();
 
 #endif
+
+  }
 
   Cero::module->print(llvm::errs(), nullptr);
   return 0;

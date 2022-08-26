@@ -9,13 +9,16 @@
 
 namespace Cero {
 
-// Emit the code for the abstract syntax tree. This will generate the LLVM IR
-// for the program.
-auto AbstractSyntaxTree::codegen() -> llvm::Value *
+auto AbstractSyntaxTree::visit(AbstractSyntaxTreeVisitor *visitor) const -> void
+{
+  for (auto &node : get_nodes())
+    node->visit(visitor);
+}
+
+auto AbstractSyntaxTree::codegen() -> void
 {
   for (auto &node : get_nodes())
     node->codegen();
-  return nullptr;
 }
 
 auto AbstractSyntaxTree::add_node(std::unique_ptr<AbstractSyntaxTree> s) -> void
@@ -28,7 +31,7 @@ auto AbstractSyntaxTree::get_nodes() const -> const std::vector<std::unique_ptr<
   return m_child;
 }
 
-auto FunctionDefinition::codegen() -> llvm::Value*
+auto FunctionDefinition::codegen() -> void
 {
   // Void type for the return value.
   const auto fn_type = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), false);
@@ -42,7 +45,6 @@ auto FunctionDefinition::codegen() -> llvm::Value*
   builder->CreateRet(nullptr); // Passing nullptr to CreateRet should give us ret void.
 
   verifyFunction(*fn);
-  return fn;
 }
 
 } // namespace Cero

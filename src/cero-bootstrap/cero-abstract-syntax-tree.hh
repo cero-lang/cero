@@ -15,8 +15,8 @@ class AbstractSyntaxTree {
 public:
   virtual ~AbstractSyntaxTree() = default;
 
-  virtual auto visit(AbstractSyntaxTreeVisitor *visitor) const -> void { }
-  virtual auto codegen() -> llvm::Value *;
+  virtual auto visit(AbstractSyntaxTreeVisitor *visitor) const -> void ;
+  virtual auto codegen() -> void;
 
   auto add_node(std::unique_ptr<AbstractSyntaxTree> s) -> void;
   auto get_nodes() const -> const std::vector<std::unique_ptr<AbstractSyntaxTree>> &;
@@ -37,7 +37,7 @@ public:
     visitor->visit(this);
   }
 
-  auto codegen() -> llvm::Value * override;
+  auto codegen() -> void override;
 
 private:
   std::string m_name;

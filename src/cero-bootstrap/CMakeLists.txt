@@ -11,7 +11,7 @@ PRIVATE
 
 target_compile_options(cero
 PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/W3 /WX>
+  $<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /experimental:external /external:W0 /external:anglebrackets>
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
 )
 
