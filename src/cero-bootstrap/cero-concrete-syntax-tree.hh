@@ -9,8 +9,8 @@ namespace Cero {
 
 class ConcreteSyntaxTree {
 public:
-  ConcreteSyntaxTree(std::vector<std::string> &source)
-      : m_tokens(source)
+  ConcreteSyntaxTree(std::vector<Token> tokens)
+      : m_tokens(std::move(tokens))
   {
   }
 
@@ -18,7 +18,7 @@ public:
   auto create_function_definition(const Token &token) const -> std::optional<std::unique_ptr<AbstractSyntaxTree>>;
 
 private:
-  Lexer m_tokens;
+  std::vector<Token> m_tokens;
 };
 
 } // namespace Cero

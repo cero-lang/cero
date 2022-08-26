@@ -44,7 +44,9 @@ private:
 
 class Lexer {
 public:
-  Lexer(std::vector<std::string> &source);
+  Lexer() = default;
+
+  auto lex(const std::string_view &line) -> std::vector<Token>;
 
   auto get_tokens() -> std::vector<Token>
   {
@@ -56,12 +58,8 @@ protected:
   auto lex_alphabet() -> std::optional<Token>;
 
 private:
-  struct {
-    std::size_t line { 0 };
-    std::size_t character { 0 };
-  } m_position;
-
-  std::vector<std::string> m_source;
+  std::string_view m_line;
+  std::size_t m_character{};
   std::vector<Token> m_tokens;
 };
 

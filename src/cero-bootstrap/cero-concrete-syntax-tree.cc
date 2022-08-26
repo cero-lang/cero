@@ -14,7 +14,7 @@ auto ConcreteSyntaxTree::create() -> std::unique_ptr<AbstractSyntaxTree>
 
   // Iterate over the tokens and create the abstract syntax tree. The tokens
   // were created in the order they are encountered in the sourcefile.
-  for (const auto &token : m_tokens.get_tokens()) {
+  for (const auto &token : m_tokens) {
     auto node = create_function_definition(token);
     if (node)
       root->add_node(std::move(node.value()));
