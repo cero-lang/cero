@@ -20,6 +20,12 @@ auto Lexer::lex(const std::string_view &line) -> std::vector<Token>
     if (!token)
       token = lex_parenthese();
 
+    if (!token)
+      token = lex_bracket();
+
+    if (!token)
+      token = lex_trailing_return();
+
     if (!token) // When all else fails. TODO: Error handling.
       break;
 
@@ -68,6 +74,30 @@ auto Lexer::lex_parenthese() -> std::optional<Token>
     return next(), Token { Token::Kind::RightParenthese };
 
   return std::nullopt;
+}
+
+auto Lexer::lex_bracket() -> std::optional<Token>
+{
+  const auto c = read<char>();
+
+  if (c == '{')
+    return next(), Token { Token::Kind::LeftBracket };
+  if (c == '}')
+    return next(), Token { Token::Kind::RightBracket };
+
+  return std::nullopt;
+}
+
+auto Lexer::lex_trailing_return() -> std::optional<Token>
+{
+  auto c = read<char>();
+
+  if (c != '-')
+    return std::nullopt;
+  if (next(), c = read<char>(); c != '>')
+    return std::nullopt;
+
+  return next(), Token { Token::Kind::TrailingReturn };
 }
 
 } // namespace Cero

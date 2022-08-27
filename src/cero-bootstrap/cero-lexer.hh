@@ -17,12 +17,17 @@ struct Token {
     Identifier,
     Auto,
     LeftParenthese,
-    RightParenthese
+    RightParenthese,
+    LeftBracket,
+    RightBracket,
+    TrailingReturn,
   };
 
   inline static std::unordered_map<std::string, Kind> Keywords {
     { "auto", Kind::Auto }
   };
+
+  Token() = default;
 
   Token(const Kind kind) noexcept
       : m_kind { kind }
@@ -39,7 +44,7 @@ struct Token {
   [[nodiscard]] auto string() const -> std::string { return m_string; }
 
 private:
-  Kind m_kind;
+  Kind m_kind {};
   std::string m_string {};
 };
 
@@ -54,6 +59,9 @@ protected:
 
   auto lex_alphabet() -> std::optional<Token>;
   auto lex_parenthese() -> std::optional<Token>;
+  auto lex_bracket() -> std::optional<Token>;
+  auto lex_trailing_return() -> std::optional<Token>;
+
 
 private:
   std::string_view m_line;

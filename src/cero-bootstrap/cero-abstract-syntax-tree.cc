@@ -38,7 +38,7 @@ auto FunctionDefinition::codegen() -> void
 
   // The type, linkage, name to use and which module to insert the function
   // into.
-  const auto fn = llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage, "main", module.get());
+  const auto fn = llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage, m_name, module.get());
   const auto fn_body = llvm::BasicBlock::Create(module->getContext(), "entry", fn);
 
   builder->SetInsertPoint(fn_body);

@@ -6,7 +6,6 @@
 #include "cero-semantic.hh"
 
 #include <format>
-#include <iostream>
 #include <memory>
 
 namespace Cero {
@@ -15,55 +14,68 @@ namespace Cero {
 //                          | <declaration>
 
 ConcreteSyntaxTree::ConcreteSyntaxTree(std::vector<Token> tokens)
-    : m_tokens(std::move(tokens))
-    , m_index { m_tokens.size() - 1 }
-    , m_token { m_tokens.at(m_index) }
+    : m_collect(std::move(tokens))
+    , m_token { m_collect.size() - 1, m_collect.at(m_collect.size() - 1) }
     , m_abstract_syntax_tree { std::make_unique<AbstractSyntaxTree>() }
     , m_semantic { std::make_unique<Semantic>() }
 {
-  // <type-specifier>
-  if (m_token.kind() != Token::Kind::Auto)
-    throw;
+  while (!m_collect.empty()) {
 
-  // <identifier>
-  m_token = expect(Token::Kind::Identifier);
+    // For now, auto is essentially the only type of declaration. Therefore it's
+    // okay to consume the token immediately. If we add more types of declarations,
+    // we'll need to revisit this.
 
-  // <parameter-list>
-  if (lookahead(1).kind() == Token::Kind::LeftParenthese)
-    parse_function_definition();
+    expect(Token::Kind::Auto);
+    expect(Token::Kind::Identifier);
+
+    if (m_token.rhs.kind() == Token::Kind::LeftParenthese) {
+      parse_function_definition();
+    } else {
+      // parse_declaration();
+    }
+  }
 
   m_abstract_syntax_tree->visit(m_semantic.get());
   m_abstract_syntax_tree->codegen();
 }
 
-// <function-definition> ::= <type-specifier> <identifier> <parameter-list>
+// <function-definition> ::= <?> <identifier> <parameter-list> <trailing-return> <type-specifier>
 // <compound-statement>
 auto ConcreteSyntaxTree::parse_function_definition() -> void
 {
+  auto name = m_token.lhs.string();
+
   expect(Token::Kind::LeftParenthese);
-  m_abstract_syntax_tree->add_node(make_unique<FunctionDefinition>(m_token.string()));
+  expect(Token::Kind::RightParenthese);
+
+  // type-specifier is optional since it can be inferred from the return type.
+  if (m_token.rhs.kind() == Token::Kind::TrailingReturn)
+    expect(Token::Kind::TrailingReturn);
+
+  expect(Token::Kind::LeftBracket);
+  expect(Token::Kind::RightBracket);
+
+  m_abstract_syntax_tree->add_node(std::make_unique<FunctionDefinition>(name));
 }
 
-// Consume the next token if it's the expected kind. Throw an exception
-// otherwise.
 auto ConcreteSyntaxTree::expect(const Token::Kind kind) -> Token
 {
-  m_tokens.pop_back();
-  m_token = m_tokens.at(--m_index);
+  // TODO: Add a exception message for unexpected token kind.
+  if (m_token.rhs.kind() != kind)
+    throw;
 
-  if (m_token.kind() == kind)
-    return m_token;
+  // Save the current token.
+  m_token.lhs = m_token.rhs;
 
-  _exit(-1);
-}
+  // Pop the current token from the collection.
+  m_collect.pop_back();
 
-auto ConcreteSyntaxTree::lookahead(const unsigned long long index) -> Token
+  // If the collection is not empty, get the next token.
+  if (m_token.index > 0)
+    m_token.rhs = m_collect.at(--m_token.index);
 
-{
-  if (m_index - index <= m_tokens.size())
-    return m_tokens.at(m_index - index);
-
-  return Token{ Token::Kind::Transparant };
+  // Return the current token. This is the token that was consumed.
+  return m_token.lhs;
 }
 
 } // namespace Cero

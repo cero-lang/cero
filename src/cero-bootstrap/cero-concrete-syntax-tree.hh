@@ -11,14 +11,19 @@ namespace Cero {
 class ConcreteSyntaxTree {
 public:
   ConcreteSyntaxTree(std::vector<Token> tokens);
+
+protected:
   auto expect(Token::Kind kind) -> Token;
-  auto lookahead(unsigned long long index) -> Token;
-  [[nodiscard]] auto parse_function_definition() -> void;
+  auto parse_function_definition() -> void;
 
 private:
-  std::vector<Token> m_tokens;
-  unsigned long long m_index;
-  Token m_token;
+  std::vector<Token> m_collect;
+
+  struct {
+    size_t index;
+     Token rhs{}, lhs{};
+  } m_token;
+
   std::unique_ptr<AbstractSyntaxTree> m_abstract_syntax_tree;
   std::unique_ptr<Semantic> m_semantic;
 };
