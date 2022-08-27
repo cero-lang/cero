@@ -11,6 +11,9 @@ auto Lexer::lex(const std::string_view &line) -> std::vector<Token>
   while (true) {
     std::optional<Token> token = std::nullopt;
 
+    if (const auto c = read<char>(); isspace(c))
+      next();
+
     if (!token)
       token = lex_alphabet();
 
@@ -26,28 +29,29 @@ auto Lexer::lex(const std::string_view &line) -> std::vector<Token>
   return m_tokens;
 }
 
-template <typename T> auto Lexer::next() -> T
-{
-  return m_character < m_line.size() ? m_line[m_character] : 0;
-}
-
-// TODO: We should rename next to eat or rethink how we consume characters.
-auto Lexer::eat() -> void
+auto Lexer::next() -> void
 {
   m_character++;
 }
 
+template <typename T> auto Lexer::read() -> T
+{
+  return m_character < m_line.size() ? m_line[m_character] : 0;
+}
+
 auto Lexer::lex_alphabet() -> std::optional<Token>
 {
-  auto c = next<char>();
+  auto c = read<char>();
   if (!isalpha(c))
     return std::nullopt;
 
-  // Consume the alphabet character.
-  eat();
+  // We only consume after we've found an alphabetical character.
+  // This is to prevent the lexer from consuming the first character of a line.
+  next();
   std::string s { c };
-  while (isalnum(c = next<char>()) || c == '_')
-    eat(), s.push_back(c);
+
+  while (isalnum(c = read<char>()) || c == '_')
+    next(), s.push_back(c);
 
   if (Token::Keywords.contains(s))
     return Token { Token::Keywords.at(s), s };
@@ -56,12 +60,12 @@ auto Lexer::lex_alphabet() -> std::optional<Token>
 
 auto Lexer::lex_parenthese() -> std::optional<Token>
 {
-  const auto c = next<char>();
+  const auto c = read<char>();
 
   if (c == '(')
-    return eat(), Token { Token::Kind::LeftParenthese };
+    return next(), Token { Token::Kind::LeftParenthese };
   if (c == ')')
-    return eat(), Token { Token::Kind::RightParenthese };
+    return next(), Token { Token::Kind::RightParenthese };
 
   return std::nullopt;
 }

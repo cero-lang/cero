@@ -48,14 +48,10 @@ public:
   Lexer() = default;
   auto lex(const std::string_view &line) -> std::vector<Token>;
 
-  auto get_tokens() -> std::vector<Token>
-  {
-    return std::move(m_tokens);
-  }
-
 protected:
-  template <typename T>  auto next() -> T;
-  auto eat() -> void;
+  auto next() -> void;
+  template <typename T> auto read() -> T;
+
   auto lex_alphabet() -> std::optional<Token>;
   auto lex_parenthese() -> std::optional<Token>;
 
