@@ -15,16 +15,29 @@ struct Token {
     Unexpected,
     Transparant,
     Identifier,
-    Auto,
+
+    // Symbols
     LeftParenthese,
     RightParenthese,
     LeftBracket,
     RightBracket,
     TrailingReturn,
+    SemiColon,
+    Colon,
+
+    // Operators
+    Comma,
+
+    // Keywords
+    Auto,
+    Return,
+    Int32
   };
 
   inline static std::unordered_map<std::string, Kind> Keywords {
-    { "auto", Kind::Auto }
+    {   "auto", Kind::Auto },
+    { "return", Kind::Return },
+    {    "i32", Kind::Int32 }
   };
 
   Token() = default;
@@ -57,11 +70,9 @@ protected:
   auto next() -> void;
   template <typename T> auto read() -> T;
 
-  auto lex_alphabet() -> std::optional<Token>;
-  auto lex_parenthese() -> std::optional<Token>;
-  auto lex_bracket() -> std::optional<Token>;
-  auto lex_trailing_return() -> std::optional<Token>;
-
+  auto lex_keywords() -> std::optional<Token>;
+  auto lex_symbols() -> std::optional<Token>;
+  auto lex_operators() -> std::optional<Token>;
 
 private:
   std::string_view m_line;

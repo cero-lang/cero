@@ -15,16 +15,13 @@ auto Lexer::lex(const std::string_view &line) -> std::vector<Token>
       next();
 
     if (!token)
-      token = lex_alphabet();
+      token = lex_keywords();
 
     if (!token)
-      token = lex_parenthese();
+      token = lex_symbols();
 
     if (!token)
-      token = lex_bracket();
-
-    if (!token)
-      token = lex_trailing_return();
+      token = lex_operators();
 
     if (!token) // When all else fails. TODO: Error handling.
       break;
@@ -45,7 +42,7 @@ template <typename T> auto Lexer::read() -> T
   return m_character < m_line.size() ? m_line[m_character] : 0;
 }
 
-auto Lexer::lex_alphabet() -> std::optional<Token>
+auto Lexer::lex_keywords() -> std::optional<Token>
 {
   auto c = read<char>();
   if (!isalpha(c))
@@ -54,8 +51,8 @@ auto Lexer::lex_alphabet() -> std::optional<Token>
   // We only consume after we've found an alphabetical character.
   // This is to prevent the lexer from consuming the first character of a line.
   next();
-  std::string s { c };
 
+  std::string s { c };
   while (isalnum(c = read<char>()) || c == '_')
     next(), s.push_back(c);
 
@@ -64,40 +61,40 @@ auto Lexer::lex_alphabet() -> std::optional<Token>
   return Token { Token::Kind::Identifier, s };
 }
 
-auto Lexer::lex_parenthese() -> std::optional<Token>
+auto Lexer::lex_symbols() -> std::optional<Token>
 {
-  const auto c = read<char>();
+  auto c = read<char>();
 
   if (c == '(')
     return next(), Token { Token::Kind::LeftParenthese };
   if (c == ')')
     return next(), Token { Token::Kind::RightParenthese };
-
-  return std::nullopt;
-}
-
-auto Lexer::lex_bracket() -> std::optional<Token>
-{
-  const auto c = read<char>();
-
   if (c == '{')
     return next(), Token { Token::Kind::LeftBracket };
   if (c == '}')
     return next(), Token { Token::Kind::RightBracket };
+  if (c == ';')
+    return next(), Token { Token::Kind::SemiColon };
+  if (c == ':')
+    return next(), Token { Token::Kind::Colon };
+
+  if (c == '-') {
+    if (next(), c = read<char>(); c == '>')
+      return next(), Token { Token::Kind::TrailingReturn };
+  }
 
   return std::nullopt;
 }
 
-auto Lexer::lex_trailing_return() -> std::optional<Token>
+auto Lexer::lex_operators()->std::optional<Token>
 {
   auto c = read<char>();
 
-  if (c != '-')
-    return std::nullopt;
-  if (next(), c = read<char>(); c != '>')
-    return std::nullopt;
+  if (c == ',')
+    return next(), Token { Token::Kind::Comma };
 
-  return next(), Token { Token::Kind::TrailingReturn };
+  return std::nullopt;
 }
+
 
 } // namespace Cero

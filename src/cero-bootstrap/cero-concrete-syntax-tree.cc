@@ -44,13 +44,25 @@ ConcreteSyntaxTree::ConcreteSyntaxTree(std::vector<Token> tokens)
 auto ConcreteSyntaxTree::parse_function_definition() -> void
 {
   auto name = m_token.lhs.string();
-
   expect(Token::Kind::LeftParenthese);
+
+  // Remark: If no type is specified, the function is generic.
+  if (m_token.rhs.kind() == Token::Kind::Identifier) {
+    while (true) {
+      expect(Token::Kind::Identifier);
+      if (m_token.rhs.kind() == Token::Kind::Colon)
+        expect(Token::Kind::Colon), expect(Token::Kind::Int32); // TODO.
+      if (m_token.rhs.kind() != Token::Kind::Comma)
+        break;
+      expect(Token::Kind::Comma);
+    }
+  }
+
   expect(Token::Kind::RightParenthese);
 
   // type-specifier is optional since it can be inferred from the return type.
   if (m_token.rhs.kind() == Token::Kind::TrailingReturn)
-    expect(Token::Kind::TrailingReturn);
+    expect(Token::Kind::TrailingReturn), expect(Token::Kind::Int32); // TODO.
 
   expect(Token::Kind::LeftBracket);
   expect(Token::Kind::RightBracket);

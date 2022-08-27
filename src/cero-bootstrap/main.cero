@@ -1,3 +1,15 @@
-auto foo()
+auto main(a: i32, b) -> i32
+{
+}
+
+auto foo(a, b)
+{
+}
+
+auto bar()
+{
+}
+
+auto baz()
 {
 }
