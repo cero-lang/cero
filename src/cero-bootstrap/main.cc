@@ -130,9 +130,12 @@ auto main(int argc, char *argv[]) -> int
     // Merge the tokens into a single vector.
     std::vector<Cero::Token> all_tokens;
     for (const auto &tokens_per_line : tokens) {
+      // NOTE: We reverse the order of the tokens to make it easier to
+      // parse the source file.
       all_tokens.insert(all_tokens.end(), tokens_per_line.begin(),
           tokens_per_line.end());
     }
+    std::ranges::reverse(all_tokens);
 
     // Clean up. We don't need the file anymore.
     if (UnmapViewOfFile(file_view) == 0 || CloseHandle(file_map) == 0 || CloseHandle(file) == 0) {

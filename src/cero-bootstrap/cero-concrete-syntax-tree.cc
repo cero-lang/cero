@@ -5,35 +5,65 @@
 #include "cero-lexer.hh"
 #include "cero-semantic.hh"
 
+#include <format>
+#include <iostream>
 #include <memory>
 
 namespace Cero {
 
+// <external-declaration> ::= <function-definition>
+//                          | <declaration>
+
 ConcreteSyntaxTree::ConcreteSyntaxTree(std::vector<Token> tokens)
     : m_tokens(std::move(tokens))
+    , m_index { m_tokens.size() - 1 }
+    , m_token { m_tokens.at(m_index) }
+    , m_abstract_syntax_tree { std::make_unique<AbstractSyntaxTree>() }
+    , m_semantic { std::make_unique<Semantic>() }
 {
-  const auto semantic = std::make_unique<Semantic>();
-  const auto abstract_syntax_tree = std::make_unique<AbstractSyntaxTree>();
+  // <type-specifier>
+  if (m_token.kind() != Token::Kind::Auto)
+    throw;
 
-  for (const auto &token : m_tokens) {
-    if (auto node = parse_function_definition(token))
-      abstract_syntax_tree->add_node(std::move(node.value()));
-  }
+  // <identifier>
+  m_token = expect(Token::Kind::Identifier);
 
-  abstract_syntax_tree->visit(semantic.get());
-  abstract_syntax_tree->codegen();
+  // <parameter-list>
+  if (lookahead(1).kind() == Token::Kind::LeftParenthese)
+    parse_function_definition();
+
+  m_abstract_syntax_tree->visit(m_semantic.get());
+  m_abstract_syntax_tree->codegen();
 }
 
-auto ConcreteSyntaxTree::parse_function_definition(const Token &token) const -> std::optional<std::unique_ptr<AbstractSyntaxTree>>
+// <function-definition> ::= <type-specifier> <identifier> <parameter-list>
+// <compound-statement>
+auto ConcreteSyntaxTree::parse_function_definition() -> void
 {
-  // TODO: *(&token + 1) is a hack to get the next token. We should use a proper
-  // peek function.
-  if (token.kind() == Token::Kind::Auto) {
-    if (const auto peek = *(&token + 1); peek.kind() == Token::Kind::Identifier)
-      return std::make_unique<FunctionDefinition>(peek.string());
-  }
+  expect(Token::Kind::LeftParenthese);
+  m_abstract_syntax_tree->add_node(make_unique<FunctionDefinition>(m_token.string()));
+}
 
-  return std::nullopt;
+// Consume the next token if it's the expected kind. Throw an exception
+// otherwise.
+auto ConcreteSyntaxTree::expect(const Token::Kind kind) -> Token
+{
+  m_tokens.pop_back();
+  m_token = m_tokens.at(--m_index);
+
+  if (m_token.kind() == kind)
+    return m_token;
+
+  _exit(-1);
+}
+
+auto ConcreteSyntaxTree::lookahead(const unsigned long long index) -> Token
+
+{
+  if (m_index - index <= m_tokens.size())
+    return m_tokens.at(m_index - index);
+
+  return Token{ Token::Kind::Transparant };
 }
 
 } // namespace Cero

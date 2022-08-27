@@ -13,10 +13,11 @@ struct Token {
   enum struct Kind {
     End,
     Unexpected,
+    Transparant,
     Identifier,
     Auto,
-    LeftParen,
-    RightParen
+    LeftParenthese,
+    RightParenthese
   };
 
   inline static std::unordered_map<std::string, Kind> Keywords {
@@ -45,7 +46,6 @@ private:
 class Lexer {
 public:
   Lexer() = default;
-
   auto lex(const std::string_view &line) -> std::vector<Token>;
 
   auto get_tokens() -> std::vector<Token>
@@ -55,7 +55,9 @@ public:
 
 protected:
   template <typename T>  auto next() -> T;
+  auto eat() -> void;
   auto lex_alphabet() -> std::optional<Token>;
+  auto lex_parenthese() -> std::optional<Token>;
 
 private:
   std::string_view m_line;
