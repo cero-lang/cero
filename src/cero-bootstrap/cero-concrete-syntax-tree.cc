@@ -10,7 +10,9 @@
 
 namespace Cero {
 
-// <external-declaration> ::= <function-definition>
+// <external-declaration> ::= <module-definition>
+//                          | <namespace-definition>
+//                          | <function-definition>
 //                          | <declaration>
 
 ConcreteSyntaxTree::ConcreteSyntaxTree(std::vector<Token> tokens)
@@ -41,40 +43,47 @@ ConcreteSyntaxTree::ConcreteSyntaxTree(std::vector<Token> tokens)
 
 // <function-definition> ::= <?> <identifier> <parameter-list> <trailing-return> <type-specifier>
 // <compound-statement>
+
 auto ConcreteSyntaxTree::parse_function_definition() -> void
 {
-  auto name = m_token.lhs.string();
-  expect(Token::Kind::LeftParenthese);
+  auto identifier = m_token.lhs.string();
 
-  // Remark: If no type is specified, the function is generic.
-  if (m_token.rhs.kind() == Token::Kind::Identifier) {
-    while (true) {
-      expect(Token::Kind::Identifier);
-      if (m_token.rhs.kind() == Token::Kind::Colon)
-        expect(Token::Kind::Colon), expect(Token::Kind::Int32); // TODO.
-      if (m_token.rhs.kind() != Token::Kind::Comma)
-        break;
-      expect(Token::Kind::Comma);
-    }
+  // <parameter-list>
+  expect(Token::Kind::LeftParenthese);
+  while (expect(Token::Kind::Identifier, true)) {
+    if (expect(Token::Kind::Colon, true))
+      expect(Token::Kind::Int32);
+    // Expect either a comma or a right parenthese.
+    if (!expect(Token::Kind::Comma, true))
+      break;
   }
 
+  // <trailing-return>
+  // type-specifier is optional since it can be inferred from the return keyword.
   expect(Token::Kind::RightParenthese);
+  if (expect(Token::Kind::TrailingReturn, true)) {
+    // <type-specifier>
+    expect(Token::Kind::Int32);
+  }
 
-  // type-specifier is optional since it can be inferred from the return type.
-  if (m_token.rhs.kind() == Token::Kind::TrailingReturn)
-    expect(Token::Kind::TrailingReturn), expect(Token::Kind::Int32); // TODO.
-
+  // <compound-statement>
   expect(Token::Kind::LeftBracket);
   expect(Token::Kind::RightBracket);
 
-  m_abstract_syntax_tree->add_node(std::make_unique<FunctionDefinition>(name));
+  m_abstract_syntax_tree->add_node(
+      std::make_unique<FunctionDefinition>(identifier));
 }
 
-auto ConcreteSyntaxTree::expect(const Token::Kind kind) -> Token
+auto ConcreteSyntaxTree::expect(const Token::Kind kind, const bool optional) -> bool
 {
   // TODO: Add a exception message for unexpected token kind.
-  if (m_token.rhs.kind() != kind)
+  if (m_token.rhs.kind() != kind) {
+    // Sometime it is fine to omit the Token.
+    if (optional) {
+      return false;
+    }
     throw;
+  }
 
   // Save the current token.
   m_token.lhs = m_token.rhs;
@@ -87,7 +96,7 @@ auto ConcreteSyntaxTree::expect(const Token::Kind kind) -> Token
     m_token.rhs = m_collect.at(--m_token.index);
 
   // Return the current token. This is the token that was consumed.
-  return m_token.lhs;
+  return true;
 }
 
 } // namespace Cero

@@ -13,7 +13,7 @@ public:
   ConcreteSyntaxTree(std::vector<Token> tokens);
 
 protected:
-  auto expect(Token::Kind kind) -> Token;
+  auto expect(Token::Kind kind, bool optional = false) -> bool;
   auto parse_function_definition() -> void;
 
 private:
