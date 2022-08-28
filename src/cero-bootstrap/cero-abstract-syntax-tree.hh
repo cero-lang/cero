@@ -37,6 +37,7 @@ public:
 
 private:
   std::string m_name;
+  std::vector<llvm::Type *> m_param;
 };
 
 } // namespace Cero

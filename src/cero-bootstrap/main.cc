@@ -53,7 +53,7 @@ auto main(int argc, char *argv[]) -> int
 
   // std::ifstream actually copies the data when input.read() is called. This is
   // a problem when the input is a large file. The solution is to use
-  // MapViewOfFile — mmap on Linux — where the data will only be read from disk
+  // MapViewOfFile â€” mmap on Linux â€” where the data will only be read from disk
   // when we access the virtual memory that the pointer points to.
 
   // TODO: Create a application programming interface like
@@ -132,9 +132,9 @@ auto main(int argc, char *argv[]) -> int
     for (const auto &tokens_per_line : tokens) {
       // NOTE: We reverse the order of the tokens to make it easier to
       // parse the source file.
-      all_tokens.insert(all_tokens.end(), tokens_per_line.begin(),
-          tokens_per_line.end());
+      all_tokens.insert(all_tokens.end(), tokens_per_line.begin(), tokens_per_line.end());
     }
+    all_tokens.emplace_back(Cero::Token::Kind::END);
     std::ranges::reverse(all_tokens);
 
     // Clean up. We don't need the file anymore.

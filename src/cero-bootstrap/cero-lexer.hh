@@ -12,6 +12,7 @@ namespace Cero {
 struct Token {
   enum struct Kind {
     // ?
+    END,
     IDENTIFIER,
 
     // Symbols
@@ -27,6 +28,7 @@ struct Token {
     // Keywords
     AUTO,
     RETURN,
+    VOID,
 
     // Literals
     INTEGER,
@@ -40,7 +42,7 @@ struct Token {
   inline static std::unordered_map<std::string, Kind> KEYWORDS {
     {   "auto", Kind::AUTO },
     { "return", Kind::RETURN },
-    {    "i32", Kind::INTEGER }
+    {   "void", Kind::VOID },
   };
 
   Token() = default;
@@ -50,18 +52,18 @@ struct Token {
   {
   }
 
-  Token(const Kind kind, std::string string) noexcept
+  Token(const Kind kind, std::string label) noexcept
       : m_kind { kind }
-      , m_string { std::move(string) }
+      , m_label { std::move(label) }
   {
   }
 
   [[nodiscard]] auto kind() const -> Kind { return m_kind; }
-  [[nodiscard]] auto string() const -> std::string { return m_string; }
+  [[nodiscard]] auto label() const -> std::string { return m_label; }
 
 private:
   Kind m_kind {};
-  std::string m_string {};
+  std::string m_label {};
 };
 
 class Lexer {
