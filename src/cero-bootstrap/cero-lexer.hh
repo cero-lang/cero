@@ -11,33 +11,36 @@ namespace Cero {
 
 struct Token {
   enum struct Kind {
-    End,
-    Unexpected,
-    Transparant,
-    Identifier,
+    // ?
+    IDENTIFIER,
 
     // Symbols
-    LeftParenthese,
-    RightParenthese,
-    LeftBracket,
-    RightBracket,
-    TrailingReturn,
-    SemiColon,
-    Colon,
-
-    // Operators
-    Comma,
+    LBRACE,     // {
+    RBRACE,     // }
+    LPAREN,     // (
+    RPAREN,     // )
+    COLON,      // :
+    SEMICOLON,  // ;
+    COMMA,      // ,
+    ARROW,      // ->
 
     // Keywords
-    Auto,
-    Return,
-    Int32
+    AUTO,
+    RETURN,
+
+    // Literals
+    INTEGER,
+    CHAR,
+    FLOAT,
+    DOUBLE,
+    STRING,
+    BOOL
   };
 
-  inline static std::unordered_map<std::string, Kind> Keywords {
-    {   "auto", Kind::Auto },
-    { "return", Kind::Return },
-    {    "i32", Kind::Int32 }
+  inline static std::unordered_map<std::string, Kind> KEYWORDS {
+    {   "auto", Kind::AUTO },
+    { "return", Kind::RETURN },
+    {    "i32", Kind::INTEGER }
   };
 
   Token() = default;
@@ -72,7 +75,6 @@ protected:
 
   auto lex_keywords() -> std::optional<Token>;
   auto lex_symbols() -> std::optional<Token>;
-  auto lex_operators() -> std::optional<Token>;
 
 private:
   std::string_view m_line;

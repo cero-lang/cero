@@ -20,9 +20,6 @@ auto Lexer::lex(const std::string_view &line) -> std::vector<Token>
     if (!token)
       token = lex_symbols();
 
-    if (!token)
-      token = lex_operators();
-
     if (!token) // When all else fails. TODO: Error handling.
       break;
 
@@ -56,45 +53,35 @@ auto Lexer::lex_keywords() -> std::optional<Token>
   while (isalnum(c = read<char>()) || c == '_')
     next(), s.push_back(c);
 
-  if (Token::Keywords.contains(s))
-    return Token { Token::Keywords.at(s), s };
-  return Token { Token::Kind::Identifier, s };
+  if (Token::KEYWORDS.contains(s))
+    return Token { Token::KEYWORDS.at(s), s };
+  return Token { Token::Kind::IDENTIFIER, s };
 }
 
 auto Lexer::lex_symbols() -> std::optional<Token>
 {
   auto c = read<char>();
 
-  if (c == '(')
-    return next(), Token { Token::Kind::LeftParenthese };
-  if (c == ')')
-    return next(), Token { Token::Kind::RightParenthese };
   if (c == '{')
-    return next(), Token { Token::Kind::LeftBracket };
+    return next(), Token { Token::Kind::LBRACE };
   if (c == '}')
-    return next(), Token { Token::Kind::RightBracket };
+    return next(), Token { Token::Kind::RBRACE };
+  if (c == '(')
+    return next(), Token { Token::Kind::LPAREN };
+  if (c == ')')
+    return next(), Token { Token::Kind::RPAREN };
   if (c == ';')
-    return next(), Token { Token::Kind::SemiColon };
+    return next(), Token { Token::Kind::SEMICOLON };
   if (c == ':')
-    return next(), Token { Token::Kind::Colon };
-
+    return next(), Token { Token::Kind::COLON };
+  if (c == ',')
+    return next(), Token { Token::Kind::COMMA };
   if (c == '-') {
     if (next(), c = read<char>(); c == '>')
-      return next(), Token { Token::Kind::TrailingReturn };
+      return next(), Token { Token::Kind::ARROW };
   }
 
   return std::nullopt;
 }
-
-auto Lexer::lex_operators()->std::optional<Token>
-{
-  auto c = read<char>();
-
-  if (c == ',')
-    return next(), Token { Token::Kind::Comma };
-
-  return std::nullopt;
-}
-
 
 } // namespace Cero
