@@ -2,11 +2,11 @@
 
 #include "cero-codegen-llvm.hh"
 #include "cero-concrete-syntax-tree.hh"
-#include "cero-semantic.hh"
+#include "cero-just-in-time.hh"
 
-#include <format>
 #include <llvm/Support/InitLLVM.h>
 
+#include <format>
 #include <future>
 #include <iostream>
 #include <queue>
@@ -48,7 +48,7 @@ auto main(int argc, char *argv[]) -> int
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
   Cero::context = std::make_unique<llvm::LLVMContext>();
-  Cero::module = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
+  Cero::module  = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
   Cero::builder = std::make_unique<llvm::IRBuilder<>>(*Cero::context);
 
   // std::ifstream actually copies the data when input.read() is called. This is
@@ -150,6 +150,6 @@ auto main(int argc, char *argv[]) -> int
 
   }
 
-  Cero::module->print(llvm::errs(), nullptr);
+  Cero::JIT jit;
   return 0;
 }

@@ -34,7 +34,7 @@ auto AbstractSyntaxTree::get_nodes() const -> const std::vector<std::unique_ptr<
 auto FunctionDefinition::codegen() -> void
 {
   // Void type for the return value.
-  const auto fn_type = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), false);
+  const auto fn_type = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context), false);
 
   // The type, linkage, name to use and which module to insert the function
   // into.
@@ -42,7 +42,7 @@ auto FunctionDefinition::codegen() -> void
   const auto fn_body = llvm::BasicBlock::Create(module->getContext(), "entry", fn);
 
   builder->SetInsertPoint(fn_body);
-  builder->CreateRet(nullptr); // Passing nullptr to CreateRet should give us ret void.
+  builder->CreateRet(builder->getInt32(0));
 
   verifyFunction(*fn);
 }
