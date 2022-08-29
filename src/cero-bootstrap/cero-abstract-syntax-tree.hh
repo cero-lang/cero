@@ -27,8 +27,9 @@ private:
 
 class FunctionDefinition : public AbstractSyntaxTree {
 public:
-  FunctionDefinition(std::string name)
+  FunctionDefinition(std::string name, std::pair<bool, std::string> is_namespace)
       : m_name(std::move(name))
+      , m_namespace(std::move(is_namespace))
   {
   }
 
@@ -38,6 +39,7 @@ public:
 private:
   std::string m_name;
   std::vector<llvm::Type *> m_param;
+  std::pair<bool, std::string> m_namespace;
 };
 
 } // namespace Cero

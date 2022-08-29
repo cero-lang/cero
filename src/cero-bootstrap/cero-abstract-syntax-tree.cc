@@ -38,6 +38,13 @@ auto FunctionDefinition::codegen() -> void
 
   // The type, linkage, name to use and which module to insert the function
   // into.
+
+  if (m_namespace.first) {
+    if (!m_namespace.second.empty()) {
+      m_name = m_namespace.second + "::" + m_name;
+    }
+  }
+
   const auto fn = llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage, m_name, module.get());
   const auto fn_body = llvm::BasicBlock::Create(module->getContext(), "entry", fn);
 

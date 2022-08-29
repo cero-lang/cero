@@ -26,6 +26,7 @@ struct Token {
     ARROW,      // ->
 
     // Keywords
+    NAMESPACE,
     AUTO,
     RETURN,
     VOID,
@@ -40,9 +41,10 @@ struct Token {
   };
 
   inline static std::unordered_map<std::string, Kind> KEYWORDS {
-    {   "auto", Kind::AUTO },
-    { "return", Kind::RETURN },
-    {   "void", Kind::VOID },
+    { "namespace", Kind::NAMESPACE },
+    {      "auto", Kind::AUTO },
+    {    "return", Kind::RETURN },
+    {      "void", Kind::VOID },
   };
 
   Token() = default;

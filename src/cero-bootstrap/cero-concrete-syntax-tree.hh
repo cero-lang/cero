@@ -14,7 +14,7 @@ public:
 
 protected:
   auto parse_function_definition() -> void;
-  auto expect(Token::Kind kind, bool is_optional = false) -> bool;
+  auto expect(Token::Kind kind, bool optional = false) -> bool;
   auto expect(Token::Kind kind, const std::function<void()> &callback) -> void;
 
 private:
@@ -37,6 +37,10 @@ private:
 
   std::unique_ptr<AbstractSyntaxTree> m_abstract_syntax_tree;
   std::unique_ptr<Semantic> m_semantic;
+
+  // Helper
+  bool m_optional = true;
+  std::pair<bool, std::string> m_namespace;
 };
 
 } // namespace Cero

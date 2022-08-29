@@ -26,11 +26,19 @@ ConcreteSyntaxTree::ConcreteSyntaxTree(std::vector<Token> tokens)
   // okay to consume the token immediately. If we add more types of
   // declarations, we'll need to revisit this.
   while (!m_tokens.empty()) {
+    expect(Token::Kind::NAMESPACE, [this] {
+      expect(Token::Kind::IDENTIFIER, m_optional);
+      m_namespace.second = m_token.label;
+      expect(Token::Kind::LBRACE, [this] {
+        m_namespace.first = !m_namespace.first;
+      });
+    });
     expect(Token::Kind::AUTO);
     expect(Token::Kind::IDENTIFIER);
     expect(Token::Kind::LPAREN, [this] {
       parse_function_definition();
     });
+    expect(Token::Kind::RBRACE, m_namespace.first);
     expect(Token::Kind::END);
   }
 
@@ -48,14 +56,15 @@ auto ConcreteSyntaxTree::parse_function_definition() -> void
   expect(Token::Kind::LBRACE);
   expect(Token::Kind::RBRACE);
 
-  m_abstract_syntax_tree->add_node(std::make_unique<FunctionDefinition>(m_token.label));
+  m_abstract_syntax_tree->add_node(std::make_unique<FunctionDefinition>(m_token.label, m_namespace));
 }
 
-auto ConcreteSyntaxTree::expect(const Token::Kind kind, const bool is_optional) -> bool
+// TODO: We need more flexibility in the way we handle optional tokens values.
+auto ConcreteSyntaxTree::expect(const Token::Kind kind, const bool optional) -> bool
 {
   // Avoid throwing an exception if the token is optional.
   if (m_token() != kind)
-    return is_optional ? false : throw;
+    return optional ? false : throw;
 
   // Pop the current token from the collection and advance to the next token.
   if (m_tokens.pop_back(); m_token() != Token::Kind::END)
