@@ -4,8 +4,9 @@ BasedOnStyle: WebKit
 IndentWidth: 2
 PointerAlignment: Right
 AccessModifierOffset: -2
+IndentCaseLabels: false
 
-# Our column limit is more around 100 characters but we want to avoid
+# Our column limit is more around 130 characters but we want to avoid
 # this rule to be over-agressive.
-ColumnLimit: 120
+ColumnLimit: 130
 ...
