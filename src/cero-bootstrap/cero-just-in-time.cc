@@ -17,6 +17,8 @@ using namespace llvm::orc;
 
 namespace Cero {
 
+std::once_flag main;
+
 JIT::JIT()
 {
   InitializeNativeTarget();
@@ -36,11 +38,13 @@ JIT::JIT()
     return TSM;
   });
 
-  const auto jit_main = ExitOnErr(jit->lookup("main"));
-  const auto jit_main_callback = reinterpret_cast<int (*)()>(jit_main.getAddress());
-  outs() << "JIT ... Running main()\n";
-  const auto jit_exit_result = jit_main_callback();
-  outs() << "JIT ... main exited with code " << jit_exit_result << ".\n";
+  std::call_once(main, [&] {
+    const auto jit_main = ExitOnErr(jit->lookup("main"));
+    const auto jit_main_callback = reinterpret_cast<int (*)()>(jit_main.getAddress());
+    outs() << "JIT ... Running main()\n";
+    const auto jit_exit_result = jit_main_callback();
+    outs() << "JIT ... main exited with code " << jit_exit_result << ".\n";
+  });
 }
 
 } // namespace Cero
