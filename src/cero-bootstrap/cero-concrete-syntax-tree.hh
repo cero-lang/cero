@@ -30,7 +30,7 @@ private:
     // This is somewhat ugly, but it prevents having to write a lot of boilerplate code.
 
     auto operator() () const -> Token::Kind { return this->index > 0 ? token.kind() : Token::Kind::END; }
-    auto operator=  (const Token &token) -> void { this->token = token; if (token.kind() == Token::Kind::IDENTIFIER) label = token.label(); }
+    auto operator=  (const Token &token) -> void { this->token = token; if (token.kind() == Token::Kind::IDENTIFIER) label = m_namespace.first ? m_namespace.second + "::" + token.label() : token.label(); }
     auto operator-- () -> size_t { return --index; }
   } m_token;
   // clang-format on
@@ -40,7 +40,8 @@ private:
 
   // Helper
   bool m_optional = true;
-  std::pair<bool, std::string> m_namespace;
+public:
+  static inline std::pair<bool, std::string> m_namespace;
 };
 
 } // namespace Cero

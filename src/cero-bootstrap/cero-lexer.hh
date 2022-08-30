@@ -24,6 +24,7 @@ struct Token {
     SEMICOLON,  // ;
     COMMA,      // ,
     ARROW,      // ->
+    DIV,        // /
 
     // Keywords
     NAMESPACE,

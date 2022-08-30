@@ -26,22 +26,39 @@ ConcreteSyntaxTree::ConcreteSyntaxTree(std::vector<Token> tokens)
   // okay to consume the token immediately. If we add more types of
   // declarations, we'll need to revisit this.
   while (!m_tokens.empty()) {
-    expect(Token::Kind::NAMESPACE, [this] {
-      expect(Token::Kind::IDENTIFIER, m_optional);
-      m_namespace.second = m_token.label;
-      expect(Token::Kind::LBRACE, [this] {
-        m_namespace.first = !m_namespace.first;
-      });
-    });
-    expect(Token::Kind::AUTO);
-    expect(Token::Kind::IDENTIFIER);
-    expect(Token::Kind::LPAREN, [this] {
-      parse_function_definition();
-    });
-    expect(Token::Kind::RBRACE, m_namespace.first);
-    expect(Token::Kind::END);
-  }
+    switch (m_token()) {
 
+    // <begin-namespace-definition>
+    case Token::Kind::NAMESPACE: {
+      expect(Token::Kind::NAMESPACE);
+      expect(Token::Kind::IDENTIFIER);
+      m_namespace.second = m_token.label;
+      expect(Token::Kind::LBRACE);
+      m_namespace.first = true;
+      break;
+    }
+
+    // <end-namespace-definition>
+    case Token::Kind::RBRACE: {
+      m_namespace.first ? m_namespace.first = false : throw;
+      expect(Token::Kind::RBRACE);
+      break;
+    }
+
+    // <function-definition>
+    case Token::Kind::AUTO: {
+      expect(Token::Kind::AUTO);
+      expect(Token::Kind::IDENTIFIER);
+      expect(Token::Kind::LPAREN, [this] {
+        parse_function_definition();
+      });
+      break;
+    }
+
+    default:
+      expect(Token::Kind::END);
+    }
+  }
   m_abstract_syntax_tree->visit(m_semantic.get());
   m_abstract_syntax_tree->codegen();
 }

@@ -80,6 +80,14 @@ auto Lexer::lex_symbols() -> std::optional<Token>
     if (next(), c = read<char>(); c == '>')
       return next(), Token { Token::Kind::ARROW };
   }
+  if (c == '/') {
+    if (next(), c = read<char>(); c == '/') {
+     while (isalnum(c = read<char>())) {
+        next();
+     }
+     return std::nullopt;
+    }
+  }
 
   return std::nullopt;
 }
