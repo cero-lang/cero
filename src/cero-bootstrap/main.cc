@@ -5,6 +5,7 @@
 #include "cero-just-in-time.hh"
 
 #include <llvm/Support/InitLLVM.h>
+#include <llvm/ADT/ScopeExit.h>
 
 #include <format>
 #include <future>
@@ -39,117 +40,83 @@ auto main(int argc, char *argv[]) -> int
                         " https://github.com/cero-lang/cero/issues "
                         "with the stack trace.\n");
 
+  // see: https://llvm.org/docs/GettingStarted.html#initializing-llvm
+  // and: https://llvm.org/docs/CommandLine.html
+
   llvm::InitLLVM init_llvm(argc, argv);
   llvm::errs().tie(&llvm::outs());
-  // See: https://llvm.org/docs/CommandLine.html
-  llvm::cl::list<std::string> input_filenames("args",
-      llvm::cl::desc("Input filenames"), llvm::cl::Positional,
-      llvm::cl::OneOrMore);
+  llvm::cl::list<std::string> input_filenames("args", llvm::cl::desc("<input files>"), llvm::cl::Positional, llvm::cl::OneOrMore);
   llvm::cl::ParseCommandLineOptions(argc, argv);
-
-  Cero::context = std::make_unique<llvm::LLVMContext>();
-  Cero::module  = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
-  Cero::builder = std::make_unique<llvm::IRBuilder<>>(*Cero::context);
-
-  // std::ifstream actually copies the data when input.read() is called. This is
-  // a problem when the input is a large file. The solution is to use
-  // MapViewOfFile — mmap on Linux — where the data will only be read from disk
-  // when we access the virtual memory that the pointer points to.
-
-  // TODO: Create a application programming interface like
-  // https://github.com/alitrack/mman-win32. This would allow us to use mmap on
-  // Windows and unify the code.
 
   for (const auto &input : input_filenames) {
 
 #ifdef WIN32
 
-    // Remarks: Address space fragmentation puts a limit on the size of the view
-    // we can create since a single view requires a contiguous address range.
+    // Address space fragmentation puts a limit on the size we can create since
+    // a single view requires a contiguous address range.
 
-    const auto file = CreateFileA(input.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file == INVALID_HANDLE_VALUE) {
-      std::cerr << "Could not open file: " << input << std::endl;
-      return 1;
+    HANDLE file;
+    HANDLE file_map;
+    PCHAR  file_view;
+
+    try {
+      file = CreateFileA(input.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+      file_map = CreateFileMapping(file, nullptr, PAGE_READONLY, 0, 0, nullptr);
+      file_view = static_cast<char *>(MapViewOfFile(file_map, FILE_MAP_READ, 0, 0, 0));
+    } catch (...) {
+      llvm::errs() << "Error: File mapping failed.\n";
+      _exit(-1);
     }
 
-    const auto file_map = CreateFileMapping(file, nullptr, PAGE_READONLY, 0, 0, nullptr);
-    if (file_map == nullptr || GetLastError() == ERROR_ALREADY_EXISTS) {
-      std::cerr << "Could not create file mapping: " << input << std::endl;
-      return 1;
-    }
+    auto scope_exit = [file, file_map, file_view] {
+      if (UnmapViewOfFile(file_view) == 0 || CloseHandle(file_map) == 0 || CloseHandle(file) == 0) {
+        llvm::errs() << "Error: File unmapping failed.\n";
+        _exit(-1);
+      }
+    }; auto scope_error = llvm::make_scope_exit([&] { scope_exit(); });
 
-    auto file_view = static_cast<char *>(MapViewOfFile(file_map, FILE_MAP_READ, 0, 0, 0));
-    if (file_view == nullptr) {
-      std::cerr << "Could not map view of file: " << input << std::endl;
-      return 1;
-    }
+    // Tokenize the input file in parallel. Each thread will tokenize a line
+    // and put the tokens in a queue. The main thread will dequeue the
+    // tokens and merge them into a single inversed vector.
 
-    // FIXME: Look for string-literals and comments and ensure that the EOL
-    // sequence is not enclosed in them. This is not perfect, but it should work
-    // for the majority of cases.
-    // https://en.cppreference.com/w/cpp/string/basic_string_view/find_first_of
+    auto line = strchr(file_view, '\n');
+    auto line_len = line - file_view;
+    auto line_view = std::string_view(file_view, line_len);
 
-    auto line_end = strchr(file_view, '\n');
-    auto line_length = line_end - file_view;
-    auto line = std::string_view(file_view, line_length);
-
-    // Create a queue to parallelize the lexing of the source files.
-    // We only map a small portion of the file data at one time.
     std::vector<std::vector<Cero::Token>> tokens;
     std::queue<std::future<std::vector<Cero::Token>>> queue;
 
-    // Tokenize the source file. Each thread will tokenize a small portion of
-    // the file and put the tokens in a queue. The main thread will dequeue the
-    // tokens and merge them into a single vector. This will allow us to
-    // tokenize the entire file in parallel and ensure that the tokens are in
-    // the same order as the source file.
-    const auto hardware_concurrency = std::thread::hardware_concurrency();
-    while (line_end != nullptr) {
-      // Lock the queue if we've reached the maximum number of threads.
-      // This will prevent the queue from getting too large.
-      if (queue.size() >= hardware_concurrency)
+    while (line != nullptr) {
+      if (queue.size() >= std::thread::hardware_concurrency())
         tokens.push_back(queue.front().get()), queue.pop();
-      queue.emplace(std::async(std::launch::async, Cero::tokenize, line));
+      queue.emplace(std::async(std::launch::async, Cero::tokenize, line_view));
 
-      // Cute trick: We can advance the pointer to the next line by adding one
-      // byte to the pointer. This is because the line ends with either '\r\n'
-      // or '\n'.
-      file_view = line_end + 0x01;
-      line_end = strchr(file_view, '\n');
-      line_length = line_end - file_view;
-      line = std::string_view(file_view, line_length);
+      file_view = line + 0x01;
+      line = strchr(file_view, '\n');
+      line_len = line - file_view;
+      line_view = std::string_view(file_view, line_len);
     }
 
-    // Wait for all the threads to finish. We can't use a queue because the
-    // threads are not guaranteed to finish in the same order as they were
-    // started.
     while (!queue.empty())
       tokens.push_back(queue.front().get()), queue.pop();
 
-    // Merge the tokens into a single vector.
     std::vector<Cero::Token> all_tokens;
-    for (const auto &tokens_per_line : tokens) {
-      // NOTE: We reverse the order of the tokens to make it easier to
-      // parse the source file.
+    for (const auto &tokens_per_line : tokens)
       all_tokens.insert(all_tokens.end(), tokens_per_line.begin(), tokens_per_line.end());
-    }
-    all_tokens.emplace_back(Cero::Token::Kind::END);
-    std::ranges::reverse(all_tokens);
+    all_tokens.emplace_back(Cero::Token::Kind::END), std::ranges::reverse(all_tokens);
 
-    // Clean up. We don't need the file anymore.
-    if (UnmapViewOfFile(file_view) == 0 || CloseHandle(file_map) == 0 || CloseHandle(file) == 0) {
-      throw std::runtime_error("Failed to unmap the file. Error: "
-          + std::to_string(GetLastError()));
-    }
-
-    // Parse the tokens. This is the main part of the compiler.
-    Cero::ConcreteSyntaxTree concrete_syntax_tree(all_tokens);
+    scope_exit();
+    scope_error.release();
 
 #endif
 
+    Cero::context = std::make_unique<llvm::LLVMContext>();
+    Cero::module  = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
+    Cero::builder = std::make_unique<llvm::IRBuilder<>>(*Cero::context);
+    Cero::ConcreteSyntaxTree concrete_syntax_tree(all_tokens);
+    Cero::JIT jit;
+
   }
 
-  Cero::JIT jit;
   return 0;
 }
