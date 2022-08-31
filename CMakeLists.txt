@@ -45,9 +45,5 @@ if(MSVC)
   endif()
 endif()
 
-find_package(Python COMPONENTS Interpreter REQUIRED)
-execute_process(COMMAND ${Python_EXECUTABLE} -m pip install pre-commit)
-execute_process(COMMAND pre-commit install --hook-type commit-msg WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-
 add_subdirectory(src/cero-bootstrap)
 
