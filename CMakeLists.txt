@@ -6,7 +6,7 @@ include(FetchContent)
 
 set(HUNTER_URL "https://github.com/cero-lang/hunter/archive/refs/heads/llvm-updates.zip")
 set(HUNTER_SHA1 "7319B54F9C9A4C151AE2A901DD9DD7A821DF32EF")
-set(HUNTER_PACKAGES LLVM)
+set(HUNTER_PACKAGES LLVM ZLIB)
 set(HUNTER_LLVM_VERSION 14.0.6)
 set(HUNTER_LLVM_CMAKE_ARGS
   LLVM_ENABLE_CRASH_OVERRIDES=OFF
