@@ -45,5 +45,5 @@ if(MSVC)
   endif()
 endif()
 
-add_subdirectory(src/cero-bootstrap)
+add_subdirectory(src)
 
