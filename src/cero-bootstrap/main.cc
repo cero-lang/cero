@@ -73,8 +73,8 @@ auto main(int argc, char *argv[]) -> int
     Cero::module  = std::make_unique<llvm::Module>("Cero LLVM", *Cero::context);
     Cero::builder = std::make_unique<llvm::IRBuilder<>>(*Cero::context);
     Cero::ConcreteSyntaxTree concrete_syntax_tree(all_tokens);
-    Cero::JIT jit;
   }
 
+  Cero::JIT jit;
   return 0;
 }
