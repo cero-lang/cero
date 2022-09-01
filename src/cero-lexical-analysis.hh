@@ -1,4 +1,6 @@
-//! Cero's lexical analysis.
+//! \file cero-lexical-analysis.hh
+//!
+//! # Cero's lexical analysis.
 //!
 //! The lexer form the first phase of Cero's front-end. It convert a sequence of characters into a
 //! sequence of lexical tokens (strings with an assigned and thus identified meaning). Lexing can be

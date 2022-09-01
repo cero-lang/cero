@@ -4,8 +4,8 @@
 name            = 'Cero'
 description     = 'A general-purpose programming language'
 license         = [ 'Apache-2.0', 'https://github.com/cero-lang/cero/blob/main/LICENSE' ]
-navbar          = [ 'namespaces', 'annotated' ]
 cpp             = 20
+show_includes   = false
 
 [sources]
 recursive_paths = [ '../src' ]

@@ -1,11 +1,13 @@
-//! Cero's compiler driver.
+//! \file main.cc
+//!
+//! # Cero's compiler driver.
 //!
 //! This file is the entry point for the compiler. It main purpose is to provide a simple and
 //! consistent interface to all compilation tasks.
 //!
 //! Below is a list of the available compilation tasks:
-//!   - Collect command line options.
-//!   - Parse the source file.
+//!   * Collect command line options.
+//!   * Parse the source file.
 //!
 //! SPDX-License-Identifier: Apache-2.0
 
