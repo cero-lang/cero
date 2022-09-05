@@ -11,67 +11,59 @@
 //!
 //! SPDX-License-Identifier: Apache-2.0
 
-#include <llvm/Support/CommandLine.h>
+#include "cero-lexical-analysis.hh"
+
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/CommandLine.h>
 
 #include <filesystem>
-#include <fstream>
-#include <future>
-#include <queue>
+#ifdef DEBUG
+  #include <fstream>
+#endif
 
-#include "cero-lexical-analysis.hh"
+using namespace std;
+using namespace filesystem;
+using namespace llvm;
+using namespace cl;
+//!  \namespace Cero Root namespace.
+using namespace Cero;
 
 auto main(int argc, char *argv[]) -> int
 {
-  using namespace std;
-  namespace fs =  filesystem;
+  setBugReportMsg("Cero crashed. Please report the bug to"
+                  " https://github.com/cero-lang/cero/issues "
+                  "with the stack trace.\n");
 
-  llvm::setBugReportMsg("Cero crashed. Please report the bug to"
-                        " https://github.com/cero-lang/cero/issues "
-                        "with the stack trace.\n");
+  InitLLVM init_llvm(argc, argv);
+  errs().tie(&outs());
 
-  // clang-format off
+#ifdef NDEBUG
+  cl::list<std::string> input_files(
+  "args", desc("<input files>"), Positional, OneOrMore);
+  ParseCommandLineOptions(argc, argv);
+#endif
 
-  // https://llvm.org/docs/CommandLine.html
-  // https://llvm.org/doxygen/classllvm_1_1InitLLVM.html
+#ifdef DEBUG
 
-  llvm::InitLLVM init_llvm(argc, argv);
-  llvm::errs().tie(&llvm::outs());
-  llvm::cl::opt<bool> language_server_protocol(
-    "lsp", llvm::cl::desc("Spawn a language server protocol server"), llvm::cl::init(false));
-  llvm::cl::ParseCommandLineOptions(argc, argv);
+  // This code isn't meant for production use. It's just a quick way to glob
+  // all the files for debugging purposes.
 
-  // clang-format on
-
-  if (language_server_protocol)
-    return -1; // TODO
-
-  for (const auto &entry : fs::directory_iterator(fs::current_path().string())) {
-    if (const auto &file = entry.path(); file.extension() == ".cero") {
-      ifstream input(file);
-      vector<vector<cero::token>> tokens;
-      queue<future<vector<cero::token>>> queue;
-
-      if (!input.is_open())
-        return llvm::errs() << "Could not open file " << file.filename().string() << "\n", 1;
-
-      //! Tokenize the input file in parallel. Each thread will tokenize a line
-      //! and put the tokens in a queue. The main thread will dequeue the
-      //! tokens and merge them into a single inversed vector.
-
-      for (std::string line; getline(input, line);) {
-        if (queue.size() >= std::thread::hardware_concurrency())
-          tokens.push_back(queue.front().get()), queue.pop();
-        queue.emplace(async(std::launch::async, cero::lexer::async, line));
-      } while (!queue.empty()) tokens.push_back(queue.front().get()), queue.pop();
-
-      std::vector<cero::token> all_tokens;
-      for (const auto &tokens_per_line : tokens)
-        all_tokens.insert(all_tokens.end(), tokens_per_line.begin(), tokens_per_line.end());
-      all_tokens.emplace_back(cero::token::kind::END), std::ranges::reverse(all_tokens);
+  try {
+    for (const auto &directory : directory_iterator(current_path().string())) {
+      if (const auto &file = directory.path(); file.extension() == ".cero") {
+        if (ifstream stream(file); stream.is_open()) {
+          for (string line; getline(stream, line);) {
+            LexicalAnalysis lexical_analysis(line);
+          }
+        }
+      }
     }
+  } catch (std::exception &e) {
+    return errs() << "error: " << e.what(), EXIT_FAILURE;
   }
 
-  return 0;
+#endif
+
+  return EXIT_SUCCESS;
 }

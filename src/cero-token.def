@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef CERO_TOKEN
+#define CERO_TOKEN(kind)
+#endif
+
+#ifndef CERO_SYMBOL_TOKEN
+#define CERO_SYMBOL_TOKEN(kind, lexeme) CERO_TOKEN(kind)
+#endif
+
+// Note that symbols need to be ordered from longest to shortest to effectively
+// provide max-munch lexing.
+
+CERO_SYMBOL_TOKEN(LBRACE, "{")
+CERO_SYMBOL_TOKEN(RBRACE, "}")
+CERO_SYMBOL_TOKEN(LPAREN, "(")
+CERO_SYMBOL_TOKEN(RPAREN, ")")
+
+#undef  CERO_SYMBOL_TOKEN
+
+#ifndef CERO_KEYWORD_TOKEN
+#define CERO_KEYWORD_TOKEN(kind, lexeme) CERO_TOKEN(kind)
+#endif
+
+CERO_KEYWORD_TOKEN(AUTO, "auto")
+
+#undef CERO_KEYWORD_TOKEN
+
+CERO_TOKEN(IDENTIFIER)
+CERO_TOKEN(END)
+
+#undef CERO_TOKEN

@@ -5,9 +5,11 @@ name            = 'Cero'
 description     = 'A general-purpose programming language'
 license         = [ 'Apache-2.0', 'https://github.com/cero-lang/cero/blob/main/LICENSE' ]
 cpp             = 20
+github          = 'cero-lang/cero'
 show_includes   = false
+navbar          = [ 'namespaces', 'annotated' ]
 
 [sources]
 recursive_paths = [ '../src' ]
 patterns        = [ '*.cc', '*.hh' ]
-extract_all     = true
+extract_all     = false

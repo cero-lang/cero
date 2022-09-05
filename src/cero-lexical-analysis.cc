@@ -2,103 +2,80 @@
 
 #include "cero-lexical-analysis.hh"
 
-#include <optional>
+#include <future>
+#include <queue>
+#include <fstream>
 
-namespace cero {
+namespace Cero {
+namespace {
+  using namespace std; // 7.3.4 [namespace.udir]
+}
 
-
-auto lexer::scan(const std::string_view &input) -> std::vector<token>
+LexicalAnalysis::LexicalAnalysis(string &stream)
+    : m_stream { stream, 0 }
 {
-  // store the input for read and next.
-  m_stream_view = input;
+  for (;;) {
+    optional<Token> token = nullopt;
 
-  while (true) {
-    std::optional<token> token = std::nullopt;
-
-    if (const auto c = read(); isspace(c))
+    do {
       next();
+    } while (isspace(read()));
 
-    if (!token)
-      token = keywords();
-
-    if (!token)
-      token = symbols();
-
-    if (!token) // When all else fails. TODO: Error handling.
-      break;
+    if (!token) token = keywords();
+    if (!token) token = symbols();
+    if (!token) break;
 
     m_tokens.emplace_back(token.value());
   }
-
-  return m_tokens;
 }
 
-auto lexer::next() -> void
-{
-  m_stream_index++;
-}
-
-auto lexer::read() const -> char
-{
-  return m_stream_index < m_stream_view.size() ? m_stream_view[m_stream_index] : '\0';
-}
-
-
-auto lexer::keywords() -> std::optional<token>
+auto LexicalAnalysis::keywords() const -> optional<Token>
 {
   auto c = read();
   if (!isalpha(c))
-    return std::nullopt;
+    return nullopt;
 
-  next(); std::string lexeme { c };
-  while (isalnum(c = read()) || c == '_')
-    next(), lexeme.push_back(c);
+  // std::string represents ~24 bytes per string object, plus ~15 extra bytes
+  // for the SSO buffer. This means that a 16 character seq will have ~40 bytes
+  // of overhead. On the bright side, keywords and identifiers are usually small
+  // enough to use small string optimization which avoid heap allocations.
 
-  if (token::keywords.contains(lexeme))
-    return token { token::keywords.at(lexeme), lexeme };
-  return token { token::kind::IDENTIFIER, lexeme };
+  string lexeme {};
+  do {
+    lexeme.push_back(c);
+    next();
+  } while (isalnum(c = read()) || c == '_');
+
+  if (const auto token = matches(lexeme)
+    #define CERO_KEYWORD_TOKEN(kind, lexeme) \
+      .Case(lexeme, Token::Kind::kind)
+    #include "cero-token.def"
+      .Default(Token::Kind::END); token() != Token::Kind::END)
+    return Token{ token(), lexeme };
+  return Token { Token::Kind::IDENTIFIER, lexeme };
 }
 
-auto lexer::symbols() -> std::optional<token>
+auto LexicalAnalysis::symbols() const -> optional<Token>
 {
-  auto c = read();
+  auto lexeme = string{read()};
 
-  if (c == '{')
-    return next(), token { token::kind::LBRACE };
-  if (c == '}')
-    return next(), token { token::kind::RBRACE };
-  if (c == '(')
-    return next(), token { token::kind::LPAREN };
-  if (c == ')')
-    return next(), token { token::kind::RPAREN };
-  if (c == ';')
-    return next(), token { token::kind::SEMICOLON };
-  if (c == ':')
-    return next(), token { token::kind::COLON };
-  if (c == ',')
-    return next(), token { token::kind::COMMA };
-  if (c == '-') {
-    if (next(), c = read(); c == '>')
-      return next(), token { token::kind::ARROW };
-  }
-  if (c == '/') {
-    if (next(), c = read(); c == '/') {
-      while (isalnum(c = read())) {
-        next();
-      }
-      return std::nullopt;
-    }
-  }
-  return std::nullopt;
+  if (const auto token = matches(lexeme)
+    #define CERO_SYMBOL_TOKEN(kind, lexeme) \
+      .Case(lexeme, Token::Kind::kind)
+    #include "cero-token.def"
+      .Default(Token::Kind::END); token() != Token::Kind::END)
+    return next(), Token { token(), lexeme };
+  return next(), nullopt;
 }
 
-// This is a helper function for std::async to call the lexer in
-// a separate thread.
-
-auto lexer::async(const std::string_view &input) -> std::vector<token>
+auto LexicalAnalysis::next() const -> void
 {
-  lexer lexer;
-  return lexer.scan(input);
+  m_stream.second++;
 }
 
-} // namespace cero
+auto LexicalAnalysis::read() const -> char
+{
+  return m_stream.second < m_stream.first.size() ? m_stream.first[m_stream.second] : '\0';
+}
+
+} // namespace Cero

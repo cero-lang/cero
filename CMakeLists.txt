@@ -47,4 +47,8 @@ endif()
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/hooks/pre-commit DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/.git/hooks)
 
+# LLVM conflict with _DEBUG
+set_property(DIRECTORY APPEND PROPERTY
+  COMPILE_DEFINITIONS $<$<CONFIG:Debug>:DEBUG> $<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
+
 add_subdirectory(src)

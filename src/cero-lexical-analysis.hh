@@ -1,83 +1,119 @@
-//! \file cero-lexical-analysis.hh
-//!
-//! # Cero's lexical analysis.
-//!
-//! The lexer form the first phase of Cero's front-end. It convert a sequence of characters into a
-//! sequence of lexical tokens (strings with an assigned and thus identified meaning). Lexing can be
-//! divided into two stages: the scanning, which segments the input string into syntactic units
-//! called lexemes(\ref footnote "1") and categorizes these into token(\ref footnote "2") classes; and the evaluating,
-//! which converts lexemes into processed values. Most of the complexity is deferred to semantic
-//! analysis phases.
-//!
-//! \anchor footnote 1. A lexeme is a sequence of characters in the source program that matches the
-//! pattern for a token and is identified by the lexical analyzer as an instance of that token.
-//!
-//! \anchor footnote 2. A token is a pair consisting of a token name and an optional attribute
-//! value. The token name is an abstract symbol representing a kind of lexical unit, e.g., a
-//! particular keyword, or sequence of input characters denoting an identifier. The token names are
-//! the input symbols that the parser processes.
-//!
 //! SPDX-License-Identifier: Apache-2.0
+
+//! \class Cero::LexicalAnalysis
+//!
+//!
+//! \details In Cero, lexical analysis is the process of converting a sequence of characters into a
+//!         sequence of tokens (strings with an assigned and thus identified meaning). A program
+//!         that performs lexical analysis may be termed a lexer, tokenizer, or scanner, though
+//!         scanner is also a term for the first stage of a lexer.
+//!
+//! \cpp
+//!
+//! #include <cero/lexical-analysis.hh>
+//!
+//! int main()
+//! {
+//!   [[maybe_unused]] const auto  a = LexicalAnalysis { "my_token" };  // const LexicalAnalysis
+//!   [[maybe_unused]] const auto &b = a;                               // const LexicalAnalysis&
+//!
+//!   return 0;
+//! }
+//!
+//! \ecpp
+//!
+//!
+//! \fn Cero::LexicalAnalysis::LexicalAnalysis(const std::string &stream)
+//!
+//! \brief Convert a sequence of characters into a sequence of \ref Cero::Token from the given
+//! stream.
+//!
+//! \details Iters through the given stream and converts it into a sequence of tokens. Tokens are
+//!         wrapped in an \ref std::optional to indicate whether or not the token is valid. The
+//!         lexical analysis is aborted should \ref std::optional return \ref std::nullopt_t at any
+//!         point.
+//!
+//! \note \ref std::optional is initialized with \ref std::nullopt_t to indicate that the token is
+//!       invalid before the lexical analysis is performed. This is done to prevent the use of
+//!       uninitialized variables. The \ref std::optional is then initialized with the token if the
+//!       lexical analysis is successful.
+//!
+//! \param stream The stream to be converted into a sequence of tokens.
+//! \return A sequence of tokens.
+//!
+//!
+//! \fn Cero::LexicalAnalysis::next() const
+//!
+//! \brief Advances the stream to the next token.
+//!
+//! \note The cursor is declared as mutable to allow the stream to be iterated through.
+//!       However, the stream is not modified in any way therefore next() is declared as const
+//!       to indicate that the stream is not modified.
+//!
+//!
+//! \fn Cero::LexicalAnalysis::keywords() const
+//!
+//! \brief Returns either a keywords or an identifier.
+//!
+//! \detail The keyword() method is used to determine whether the next token is a keyword or an
+//!         identifier by checking the next token against the list of keywords enumerated in
+//!         cero-token.def.
+//!
+//! \note Non-alphanumeric characters are allowed in identifiers. However, they are not allowed in
+//!       keywords. This is because keywords are used to identify the type of token. For example,
+//!       the keyword `int` is used to identify the token as an integer. If non-alphanumeric
+//!       characters were allowed in keywords, the keyword `int32_t` would be interpreted as the
+//!       keyword `int` followed by the identifier `32_t`. This would cause the lexical analysis to
+//!       fail.
+//!       <br><br>
+//!       In constrast, non-alphanumeric characters are allowed in identifiers because they are
+//!       used to identify the name of a variable. For example, the identifier `my_variable` is used
+//!       to identify the variable `my_variable`. If non-alphanumeric characters were not allowed
+//!       in identifiers, the identifier `my_variable` would be interpreted as the identifier `my`
+//!       followed by the identifier `variable`. This would cause the lexical analysis to fail.
+//!
+//! \return An \ref std::optional containing a \ref Cero::Token if the token is a keyword or an
+//!         identifier, otherwise \ref std::nullopt_t.
+//!
+//!
+//! \fn Cero::LexicalAnalysis::symbols() const
+//!
+//! \brief Returns a symbol.
+//!
+//! \detail The symbol() method is used to determine whether the next token is a symbol by checking
+//!         the next token against the list of symbols enumerated in cero-token.def.
+//!
+//! \note Symbols are used to identify the type of token. For example, the symbol "(" is used
+//!       to identify the token as a left parenthesis.
+//!
+//! \return An \ref std::optional containing a \ref Cero::Token if the token is a symbol, otherwise
+//!         \ref std::nullopt_t.
 
 #pragma once
 
-#include <any>
-#include <optional>
-#include <string>
-#include <tuple>
-#include <unordered_map>
+#include "cero-token.hh"
+
+#include <llvm/ADT/StringSwitch.h>
+
 #include <vector>
 
-namespace cero {
+namespace Cero {
 
-struct token {
-  enum struct kind {
-    LBRACE,     // {
-    RBRACE,     // }
-    LPAREN,     // (
-    RPAREN,     // )
-    COLON,      // :
-    SEMICOLON,  // ;
-    COMMA,      // ,
-    ARROW,      // ->
-    END,
-    IDENTIFIER,
-    AUTO,
-  };
+class LexicalAnalysis {
+using matches = llvm::StringSwitch<Token>;
 
-  inline static std::unordered_map<std::string, kind> keywords {
-    { "auto", kind::AUTO },
-  };
-
-  //! An attribute is not always a lexeme. std::optional<std::any> is used to represent this
-  //! distinction for now. Revisit this later?
-  explicit token(const kind kind, std::optional<std::any> &&attribute = std::nullopt) noexcept
-      : m_token { kind, attribute }
-  {
-  }
-
-private:
-  std::tuple<kind, std::optional<std::any>> m_token;
-};
-
-class lexer {
 public:
-  lexer() = default;
+  LexicalAnalysis(std::string& stream);
 
-  auto scan(const std::string_view &input) -> std::vector<token>;
-  auto next() -> void;
-  auto read() const -> char;
-
-  static auto async(const std::string_view &input) -> std::vector<token>;
-
-  auto keywords() -> std::optional<token>;
-  auto symbols() -> std::optional<token>;
+protected:
+                auto next()     const -> void;
+  [[nodiscard]] auto read()     const -> char;
+  [[nodiscard]] auto keywords() const -> std::optional<Token>;
+  [[nodiscard]] auto symbols()  const -> std::optional<Token>;
 
 private:
-  std::string_view   m_stream_view;
-  std::size_t        m_stream_index{};
-  std::vector<token> m_tokens;
+  std::vector<Token> m_tokens;
+  mutable std::pair<std::string_view, std::size_t> m_stream;
 };
-
 
 } // namespace cero
