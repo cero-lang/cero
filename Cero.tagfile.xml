@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<tagfile>
+  <compound kind="file">
+    <name>main.cc</name>
+    <filename>main_8cc.html</filename>
+    <namespace>Cero</namespace>
+  </compound>
+  <compound kind="class">
+    <name>Cero::LexicalAnalysis</name>
+    <filename>class_cero_1_1_lexical_analysis.html</filename>
+    <member kind="function">
+      <type></type>
+      <name>LexicalAnalysis</name>
+      <anchorfile>class_cero_1_1_lexical_analysis.html</anchorfile>
+      <anchor>a3c843e4162a2f064e0b42b4494ec37a6</anchor>
+      <arglist>(std::string &amp;stream)</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>auto</type>
+      <name>next</name>
+      <anchorfile>class_cero_1_1_lexical_analysis.html</anchorfile>
+      <anchor>a446b633bce3aac81dce6a3f9dd56bd9f</anchor>
+      <arglist>() const -&gt; void</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>auto</type>
+      <name>keywords</name>
+      <anchorfile>class_cero_1_1_lexical_analysis.html</anchorfile>
+      <anchor>aec4b25820f2065808fa0c68aa8765957</anchor>
+      <arglist>() const -&gt; std::optional&lt; Token &gt;</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>auto</type>
+      <name>symbols</name>
+      <anchorfile>class_cero_1_1_lexical_analysis.html</anchorfile>
+      <anchor>a0741fd4291bb8a2dcad1a23d3f780bb7</anchor>
+      <arglist>() const -&gt; std::optional&lt; Token &gt;</arglist>
+    </member>
+  </compound>
+  <compound kind="class">
+    <name>Cero::Token</name>
+    <filename>struct_cero_1_1_token.html</filename>
+    <member kind="function">
+      <type></type>
+      <name>Token</name>
+      <anchorfile>struct_cero_1_1_token.html</anchorfile>
+      <anchor>a8ce486ccf711f27c24ba295300be7e55</anchor>
+      <arglist>(Kind kind, std::optional&lt; std::any &gt; &amp;&amp;attribute=std::nullopt)</arglist>
+    </member>
+    <member kind="function">
+      <type>auto</type>
+      <name>operator()</name>
+      <anchorfile>struct_cero_1_1_token.html</anchorfile>
+      <anchor>a62afb5c0493b8f712815de9364cfe942</anchor>
+      <arglist>() const -&gt; Kind</arglist>
+    </member>
+    <member kind="friend">
+      <type>friend auto</type>
+      <name>operator==</name>
+      <anchorfile>struct_cero_1_1_token.html</anchorfile>
+      <anchor>aec64a70d7dce6ff6e1d68a751cf3c267</anchor>
+      <arglist>(const Token &amp;lhs, const Token &amp;rhs) -&gt; bool</arglist>
+    </member>
+    <member kind="friend">
+      <type>friend auto</type>
+      <name>operator!=</name>
+      <anchorfile>struct_cero_1_1_token.html</anchorfile>
+      <anchor>a56112cfa6862986ce05f7490953a8bbd</anchor>
+      <arglist>(const Token &amp;lhs, const Token &amp;rhs) -&gt; bool</arglist>
+    </member>
+  </compound>
+  <compound kind="namespace">
+    <name>Cero</name>
+    <filename>namespace_cero.html</filename>
+    <class kind="class">Cero::LexicalAnalysis</class>
+    <class kind="class">Cero::Token</class>
+  </compound>
+</tagfile>
